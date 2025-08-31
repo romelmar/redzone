@@ -1,65 +1,66 @@
-import { useAuthStore } from '@/stores/auth'
-import { createRouter, createWebHistory } from 'vue-router'
+import { useAuthStore } from "@/stores/auth";
+import { createRouter, createWebHistory } from "vue-router";
+
+import WithDues from "../pages/Subscribers/WithDues.vue";
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
-    { path: '/', redirect: '/dashboard', meta: { requiresAuth: true } },
+    { path: "/", redirect: "/dashboard", meta: { requiresAuth: true } },
+
+    // 🔹 Group routes that use the default layout
     {
-      path: '/',
-      component: () => import('../layouts/default.vue'),
+      path: "/",
+      component: () => import("../layouts/default.vue"),
+      meta: { requiresAuth: true },
       children: [
         {
-          path: 'dashboard',
-          component: () => import('../pages/dashboard.vue'),
-          meta: { requiresAuth: true },
+          path: "dashboard",
+          name: "dashboard",
+          component: () => import("../pages/dashboard.vue"),
+        },
+        {
+          path: "subscribers/with-dues",
+          name: "with-dues",
+          component: WithDues,
         },
       ],
     },
+
+    // 🔹 Auth pages (blank layout)
     {
-      path: '/',
-      component: () => import('../layouts/blank.vue'),
+      path: "/",
+      component: () => import("../layouts/blank.vue"),
       children: [
         {
-          path: 'login',
-          component: () => import('../pages/login.vue'),
+          path: "login",
+          name: "login",
+          component: () => import("../pages/login.vue"),
         },
       ],
     },
   ],
-})
+});
 
 // 🔐 Global Navigation Guard
 router.beforeEach(async (to, from, next) => {
-  const auth = useAuthStore()
+  const auth = useAuthStore();
 
-  // If route requires auth
   if (to.meta.requiresAuth) {
     if (!auth.user) {
       try {
-        await auth.fetchUser()
+        await auth.fetchUser();
       } catch (error) {
-        return next({ path: '/login' })
+        return next({ path: "/login" });
       }
     }
   }
 
-  // If user is logged in and tries to go to login, redirect to dashboard
-  if (to.path === '/login') {
-    if (!auth.user) {
-      try {
-        await auth.fetchUser()
-      } catch (error) {
-        return next()
-      }
-    }
-
-    if (auth.user) {
-      return next({ path: '/dashboard' })
-    }
+  if (to.path === "/login" && auth.user) {
+    return next({ path: "/dashboard" });
   }
 
-  next()
-})
+  next();
+});
 
-export default router
+export default router;
