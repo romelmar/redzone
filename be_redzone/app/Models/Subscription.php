@@ -8,7 +8,7 @@ use Carbon\Carbon;
 
 class Subscription extends Model
 {
-    protected $fillable = ['id','subscriber_id', 'plan_id', 'start_date', 'next_billing_date', 'status'];
+    protected $fillable = ['id','subscriber_id', 'plan_id', 'start_date', 'next_billing_date', 'status','balance'];
 
     public function subscriber()
     {

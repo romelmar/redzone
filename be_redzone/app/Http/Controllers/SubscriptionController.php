@@ -6,7 +6,9 @@ use App\Models\Payment;
 use Illuminate\Http\Request;
 use App\Models\Subscription;
 use App\Models\SubscriptionHistory;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
 
 
@@ -14,8 +16,9 @@ class SubscriptionController extends Controller
 {
     public function index()
     {
-        $subscriptions = Subscription::all();
-        return response()->json($subscriptions);
+
+        return Subscription::with(['subscriber', 'plan'])->get();
+        // return response()->json($subscriptions);
     }
 
     // public function store(Request $request)
@@ -55,13 +58,32 @@ class SubscriptionController extends Controller
         //     'payment_date' => now(),
         // ]);
 
+
+
         return redirect()->route('subscribers.show', ['subscriber' => $request->subscriber_id]);
     }
 
 
     public function show(Subscription $subscription)
     {
-        return response()->json($subscription);
+        // $subscription->load(['subscriber', 'plan']);
+        // return response()->json($subscription);
+
+        return $subscription->load(['subscriber', 'plan']);
+    }
+
+    public function downloadSoa(Subscription $subscription)
+    {
+        // Load related data
+        $subscription->load('plan', 'subscriber', 'payments');
+
+        $pdf = Pdf::loadView('pdf.soa', [
+            'subscription' => $subscription
+        ]);
+
+        $filename = "SOA-{$subscription->id}.pdf";
+
+        return $pdf->download($filename);
     }
 
     public function update(Request $request, Subscription $subscription)

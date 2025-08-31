@@ -1,6 +1,8 @@
 import { useAuthStore } from "@/stores/auth";
 import { createRouter, createWebHistory } from "vue-router";
 
+import Show from "@/pages/Subscriptions/Show.vue";
+import Subscriptions from "@/pages/Subscriptions/Subscriptions.vue";
 import WithDues from "../pages/Subscribers/WithDues.vue";
 
 const router = createRouter({
@@ -15,14 +17,50 @@ const router = createRouter({
       meta: { requiresAuth: true },
       children: [
         {
-          path: "dashboard",
+          path: "/dashboard",
           name: "dashboard",
           component: () => import("../pages/dashboard.vue"),
         },
         {
-          path: "subscribers/with-dues",
+          path: "/subscribers/with-dues",
           name: "with-dues",
           component: WithDues,
+        },
+        {
+          path: "/subscriptions",
+          name: "subscriptions.index",
+          component: Subscriptions,
+        },
+        {
+          path: "/subscriptions/:id",
+          name: "subscriptions.show",
+          component: Show,
+          props: true,
+        },
+        // ------------------------------------------------
+        {
+          path: "account-settings",
+          component: () => import("../pages/account-settings.vue"),
+        },
+        {
+          path: "typography",
+          component: () => import("../pages/typography.vue"),
+        },
+        {
+          path: "icons",
+          component: () => import("../pages/icons.vue"),
+        },
+        {
+          path: "cards",
+          component: () => import("../pages/cards.vue"),
+        },
+        {
+          path: "tables",
+          component: () => import("../pages/tables.vue"),
+        },
+        {
+          path: "form-layouts",
+          component: () => import("../pages/form-layouts.vue"),
         },
       ],
     },
