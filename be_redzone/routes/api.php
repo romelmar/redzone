@@ -10,6 +10,7 @@ Route::middleware(['auth:sanctum'])->get('/user', function (Request $request) {
 });
 
 
+Route::get('/subscribers', [SubscriberController::class, 'getSubscribers']);
 Route::get('/subscribers-with-dues', [SubscriberController::class, 'getSubscribersWithDues']);
 Route::get('/subscriptions', [SubscriptionController::class, 'index']);
 Route::get('/subscriptions/{id}', [SubscriptionController::class, 'show']);

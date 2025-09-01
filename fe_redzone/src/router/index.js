@@ -4,6 +4,7 @@ import { createRouter, createWebHistory } from "vue-router";
 import Show from "@/pages/Subscriptions/Show.vue";
 import Subscriptions from "@/pages/Subscriptions/Subscriptions.vue";
 import WithDues from "../pages/Subscribers/WithDues.vue";
+import Index from "@/pages/Subscribers/Index.vue";
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -20,6 +21,11 @@ const router = createRouter({
           path: "/dashboard",
           name: "dashboard",
           component: () => import("../pages/dashboard.vue"),
+        },
+        {
+          path: "/subscribers",
+          name: "index",
+          component: Index,
         },
         {
           path: "/subscribers/with-dues",

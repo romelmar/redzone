@@ -198,6 +198,12 @@ class SubscriberController extends Controller
         ]);
     }
 
+    public function getSubscribers()
+    {
+        $subscribers = Subscriber::all();
+        return response()->json($subscribers);
+    }
+
     public function getSubscribersWithDues()
     {
         $subscribers = Subscriber::with(['subscriptions.payments', 'subscriptions.plan'])
