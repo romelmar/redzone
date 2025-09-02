@@ -28,6 +28,11 @@ const router = createRouter({
           component: Index,
         },
         {
+          path: "/subscribers/account-settings",
+          name: "account-settings",
+          component: Index,
+        },
+        {
           path: "/subscribers/with-dues",
           name: "with-dues",
           component: WithDues,

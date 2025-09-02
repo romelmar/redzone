@@ -76,20 +76,28 @@ const upgradeBanner = computed(() => {
           to: '/dashboard',
         }"
       />
+<VerticalNavLink
+  :item="{
+    title: 'Subscribers',
+    icon: 'bx-user',
+    to: '/subscribers',
+    exact: false, // stays active for /subscribers/* too
+  }"
+/>
       <VerticalNavLink
         :item="{
-          title: 'Subscribers',
-          icon: 'bx-home',
-          to: '/subscribers',
+          title: 'Plans',
+          icon: 'bx-list-ul',
+          to: '/plans',
         }"
       />
-      <VerticalNavLink
+      <!-- <VerticalNavLink
         :item="{
           title: 'Account Settings',
           icon: 'mdi-account-cog-outline',
           to: '/account-settings',
         }"
-      />
+      /> -->
 
       <!-- 👉 Pages -->
       <VerticalNavSectionTitle
