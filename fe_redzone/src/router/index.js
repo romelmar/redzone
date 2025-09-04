@@ -5,6 +5,8 @@ import Show from "@/pages/Subscriptions/Show.vue";
 import Subscriptions from "@/pages/Subscriptions/Subscriptions.vue";
 import WithDues from "../pages/Subscribers/WithDues.vue";
 import Index from "@/pages/Subscribers/Index.vue";
+import AccountSettings from "../pages/account-settings.vue";
+import Plan from "../pages/Plans/Index.vue";
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -28,9 +30,10 @@ const router = createRouter({
           component: Index,
         },
         {
-          path: "/subscribers/account-settings",
+          path: "/subscribers/account-settings/:id",
           name: "account-settings",
-          component: Index,
+          component: AccountSettings,
+          props: true,
         },
         {
           path: "/subscribers/with-dues",
@@ -46,6 +49,12 @@ const router = createRouter({
           path: "/subscriptions/:id",
           name: "subscriptions.show",
           component: Show,
+          props: true,
+        },
+        {
+          path: "/plans",
+          name: "plans.index",
+          component: Plan,
           props: true,
         },
         // ------------------------------------------------

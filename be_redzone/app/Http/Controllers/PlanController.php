@@ -14,7 +14,8 @@ class PlanController extends Controller
     public function index()
     {
         $plans = Plan::all();
-        return Inertia::render('Plans/Index', ['plans' => $plans]);
+
+        return response()->json($plans);
     }
    
     public function dataOnly()

@@ -7,6 +7,10 @@ import AccountSettingsSecurity from '@/views/pages/account-settings/AccountSetti
 const route = useRoute()
 const activeTab = ref(route.params.tab)
 
+const props = defineProps({
+  subscription: Object
+});
+
 // tabs
 const tabs = [
   {

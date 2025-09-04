@@ -3,19 +3,19 @@ import { ref, computed, onMounted } from "vue";
 import axios from "axios";
 
 // State
-const subscribers = ref([]);
+const plans = ref([]);
 const search = ref("");
 const loading = ref(true);
 
-// Fetch subscribers with subscriber + plan eager loaded
+// Fetch plans with subscriber + plan eager loaded
 const fetchSubscribers = async () => {
   loading.value = true;
   try {
-    const { data } = await axios.get('/api/subscribers')
+    const { data } = await axios.get('/api/plans')
 
-    subscribers.value = data;
+    plans.value = data;
   } catch (error) {
-    console.error("Error fetching subscribers:", error);
+    console.error("Error fetching plans:", error);
   } finally {
     loading.value = false;
   }
@@ -25,13 +25,10 @@ onMounted(fetchSubscribers);
 
 // Filtering
 const filtered = computed(() => {
-  if (!search.value) return subscribers.value;
+  if (!search.value) return plans.value;
   const q = search.value.toLowerCase();
-  return subscribers.value.filter((s) =>
+  return plans.value.filter((s) =>
     (s.name || "").toLowerCase().includes(q) ||
-    (s.email || "").toLowerCase().includes(q) ||
-    (s.phone || "").toLowerCase().includes(q) ||
-    (s.address || "").toLowerCase().includes(q) ||
     String(s.id).includes(q)
   );
 });
@@ -52,10 +49,7 @@ const filtered = computed(() => {
       <thead>
         <tr>
           <th class="border px-4 py-2">ID</th>
-          <th class="border px-4 py-2">Subscriber</th>
-          <th class="border px-4 py-2">Email</th>
-          <th class="border px-4 py-2">Phone</th>
-          <th class="border px-4 py-2">Address</th>
+          <th class="border px-4 py-2">Name</th>
           <th class="border px-4 py-2">Action</th>
         </tr>
       </thead>
@@ -66,16 +60,12 @@ const filtered = computed(() => {
           <td class="border px-4 py-2">
             {{ subscriber.name || "N/A" }}
           </td>
-
-          <td class="border px-4 py-2">{{ subscriber?.email }}</td>
-          <td class="border px-4 py-2">{{ subscriber?.phone }}</td>
-          <td class="border px-4 py-2">{{ subscriber?.address }}</td>
           <td class="border px-4 py-2 text-center">
             <!-- <VBtn color="primary" @click="downloadSoa(subscriber.id)">
              Manage
             </VBtn> -->
 
-            <RouterLink :to="`/subscribers/account-settings/${subscriber.id}`">
+            <RouterLink :to="`/plans/account-settings/${subscriber.id}`">
               <VBtn color="primary">Manage</VBtn>
             </RouterLink>
           </td>
