@@ -1,8 +1,8 @@
 <?php
 
+use App\Http\Controllers\Api\PlanController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Auth\RegisteredUserController;
-use App\Http\Controllers\PlanController;
 use App\Http\Controllers\SubscriberController;
 use App\Http\Controllers\SubscriptionController;
 use Illuminate\Http\Request;
@@ -20,4 +20,9 @@ Route::get('/subscriptions', [SubscriptionController::class, 'index']);
 Route::get('/subscriptions/{id}', [SubscriptionController::class, 'show']);
 
 
-    Route::get('/plans', [PlanController::class, 'index'])->name('plans.index');
+// Route::get('/plans', [PlanController::class, 'index'])->name('plans.index');
+Route::apiResource('plans', PlanController::class);
+Route::apiResource('subscribers', SubscriberController::class);
+
+
+Route::get('/subscribers/with-dues', [SubscriberController::class, 'subscribersWithDues'])->name('subscribers.with-dues');

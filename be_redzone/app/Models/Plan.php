@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class Plan extends Model
 {
-    protected $fillable = ['name', 'price'];
+    protected $fillable = ['name', 'description', 'price'];
 
     public function subscriptions()
     {
