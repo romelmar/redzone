@@ -1,79 +1,110 @@
 <script setup>
-import { ref, computed, onMounted } from "vue";
-import axios from "axios";
+import { ref, onMounted } from 'vue'
+import axios from 'axios'
+import { useToastStore } from '@/stores/toast'
 
-// State
-const plans = ref([]);
-const search = ref("");
-const loading = ref(true);
+const plans = ref([])
+const dialog = ref(false)
+const editId = ref(null)
+const form = ref({ name: '', description: '', price: '' })
+const loading = ref(false)
+const toast = useToastStore()
 
-// Fetch plans with subscriber + plan eager loaded
-const fetchSubscribers = async () => {
-  loading.value = true;
+const fetchPlans = async () => {
+  loading.value = true
+  const { data } = await axios.get('/api/plans')
+  plans.value = data
+  loading.value = false
+}
+
+const savePlan = async () => {
   try {
-    const { data } = await axios.get('/api/plans')
+    if (editId.value) {
+      await axios.put(`/api/plans/${editId.value}`, form.value)
+      toast.show('Plan updated successfully!', 'success')
+    } else {
+      await axios.post('/api/plans', form.value)
+      toast.show('Plan created successfully!', 'success')
 
-    plans.value = data;
-  } catch (error) {
-    console.error("Error fetching plans:", error);
-  } finally {
-    loading.value = false;
+    }
+    dialog.value = false
+    resetForm()
+    fetchPlans()
+  } catch (err) {
+    alert('Error saving plan')
   }
-};
+}
 
-onMounted(fetchSubscribers);
+const editPlan = (plan) => {
+  form.value = { ...plan }
+  editId.value = plan.id
+  dialog.value = true
+}
 
-// Filtering
-const filtered = computed(() => {
-  if (!search.value) return plans.value;
-  const q = search.value.toLowerCase();
-  return plans.value.filter((s) =>
-    (s.name || "").toLowerCase().includes(q) ||
-    String(s.id).includes(q)
-  );
-});
+const deletePlan = async (id) => {
+  if (confirm('Are you sure you want to delete this plan?')) {
+    await axios.delete(`/api/plans/${id}`)
+    fetchPlans()
+    toast.show('Plan Deleted successfully!', 'success')
+  }
+}
 
+const resetForm = () => {
+  form.value = { name: '', description: '', price: '' }
+  editId.value = null
+}
+
+onMounted(fetchPlans)
 </script>
 
 <template>
-  <div class="p-6">
+  <VCard class="p-6">
+    <VCardTitle class="d-flex justify-space-between align-center">
+      <span>Subscription Plans</span>
+      <VBtn color="primary" @click="dialog = true">Add Plan</VBtn>
+    </VCardTitle>
 
-    <!-- 🔍 Search Box -->
-    <div class="mb-4">
-      <input v-model="search" type="text" placeholder="Search by ID, Subscriber, or Plan..."
-        class="border rounded px-3 py-2 w-1/3" />
-    </div>
+    <VCardText>
+      <div v-if="loading" class="text-center py-10">Loading...</div>
+      <VTable v-else fixed-header height="400px">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Description</th>
+            <th>Price (₱)</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="plan in plans" :key="plan.id">
+            <td>{{ plan.name }}</td>
+            <td>{{ plan.description }}</td>
+            <td>{{ Number(plan.price).toLocaleString('en-PH', { minimumFractionDigits: 2 }) }}</td>
+            <td>
+              <VBtn color="warning" size="small" class="mr-2" @click="editPlan(plan)">Edit</VBtn>
+              <VBtn color="error" size="small" @click="deletePlan(plan.id)">Delete</VBtn>
+            </td>
+          </tr>
+        </tbody>
+      </VTable>
+    </VCardText>
+  </VCard>
 
-    <!-- Table -->
-    <VTable height="600" fixed-header>
-      <thead>
-        <tr>
-          <th class="border px-4 py-2">ID</th>
-          <th class="border px-4 py-2">Name</th>
-          <th class="border px-4 py-2">Action</th>
-        </tr>
-      </thead>
-
-      <tbody>
-        <tr v-for="subscriber in filtered" :key="subscriber.id">
-          <td class="border px-4 py-2">{{ subscriber.id }}</td>
-          <td class="border px-4 py-2">
-            {{ subscriber.name || "N/A" }}
-          </td>
-          <td class="border px-4 py-2 text-center">
-            <!-- <VBtn color="primary" @click="downloadSoa(subscriber.id)">
-             Manage
-            </VBtn> -->
-
-            <RouterLink :to="`/plans/account-settings/${subscriber.id}`">
-              <VBtn color="primary">Manage</VBtn>
-            </RouterLink>
-          </td>
-        </tr>
-      </tbody>
-    </VTable>
-
-    <!-- Loading -->
-    <div v-if="loading" class="mt-4 text-gray-500">Loading...</div>
-  </div>
+  <!-- Dialog -->
+  <VDialog v-model="dialog" max-width="500px">
+    <VCard>
+      <VCardTitle>{{ editId ? 'Edit Plan' : 'Add Plan' }}</VCardTitle>
+      <VCardText>
+        <VTextField label="Name" v-model="form.name" outlined dense />
+        <VTextField label="Description" v-model="form.description" outlined dense />
+        <VTextField label="Price" type="number" v-model="form.price" outlined dense />
+      </VCardText>
+      <div class="d-flex justify-end pa-4">
+        <VBtn color="grey" variant="text" @click="dialog = false">Cancel</VBtn>
+        <VBtn color="primary" variant="flat" @click="savePlan">
+          {{ editId ? 'Update' : 'Save' }}
+        </VBtn>
+      </div>
+    </VCard>
+  </VDialog>
 </template>

@@ -13,6 +13,7 @@ const props = defineProps({
 
 // tabs
 const tabs = [
+
   {
     title: 'Account',
     icon: 'bx-user',
@@ -56,7 +57,8 @@ const tabs = [
       v-model="activeTab"
       class="mt-5 disable-tab-transition"
     >
-      <!-- Account -->
+
+    <!-- Account -->
       <VWindowItem value="account">
         <AccountSettingsAccount />
       </VWindowItem>
