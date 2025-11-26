@@ -11,12 +11,14 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('payments', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('subscription_id')->constrained()->onDelete('cascade');
-            $table->decimal('amount', 8, 2);
-            $table->date('billing_month');
-            $table->timestamps();
+        Schema::create('payments', function (Blueprint $t) {
+            $t->id();
+            $t->foreignId('subscription_id')->constrained()->cascadeOnDelete();
+            $t->decimal('amount', 10, 2);
+            $t->date('paid_at');
+            $t->string('reference')->nullable();
+            $t->text('notes')->nullable();
+            $t->timestamps();
         });
     }
 

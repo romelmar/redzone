@@ -11,22 +11,21 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('addons', function (Blueprint $t) {
+        Schema::create('service_credits', function (Blueprint $t) {
             $t->id();
             $t->foreignId('subscription_id')->constrained()->cascadeOnDelete();
-            $t->string('name');
-            $t->decimal('amount', 10, 2);
-            $t->date('bill_month'); // first day of month: 2025-11-01
+            $t->date('bill_month');
+            $t->unsignedInteger('outage_days')->default(0);
+            $t->text('reason')->nullable();
             $t->timestamps();
         });
     }
-
 
     /**
      * Reverse the migrations.
      */
     public function down(): void
     {
-        Schema::dropIfExists('addons');
+        Schema::dropIfExists('service_credits');
     }
 };

@@ -5,26 +5,14 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Subscriber extends Model
 {
-    protected $fillable = ['name', 'email', 'phone', 'address'];
+    protected $fillable = ['name','email','phone','address'];
 
-    public function subscriptions()
+    public function subscriptions(): HasMany
     {
         return $this->hasMany(Subscription::class);
-    }
-
-    // Method to compute the balance for all subscriptions of the subscriber
-    public function computeBalance()
-    {
-        $balance = 0;
-
-        // Iterate through each subscription of the subscriber
-        foreach ($this->subscriptions as $subscription) {
-            $balance += $subscription->computeBalance();
-        }
-
-        return $balance;
     }
 }

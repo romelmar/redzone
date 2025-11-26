@@ -7,10 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class Payment extends Model
 {
-    protected $fillable = ['subscription_id', 'amount','payment_type', 'note','payment_date'];
-
-    public function subscription()
-    {
-        return $this->belongsTo(Subscription::class);
-    }
+    protected $fillable = ['subscription_id','amount','paid_at','reference','notes'];
+    protected $casts = ['paid_at' => 'date'];
 }
+
