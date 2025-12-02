@@ -8,7 +8,10 @@ use Carbon\Carbon;
 
 class Subscription extends Model
 {
-    protected $fillable = ['id','subscriber_id', 'plan_id', 'start_date', 'next_billing_date', 'status','balance'];
+    // protected $fillable = ['id','subscriber_id', 'plan_id', 'start_date', 'next_billing_date', 'status','balance'];
+
+    protected $fillable = ['subscriber_id', 'plan_id', 'start_date', 'end_date', 'monthly_discount', 'active'];
+    protected $casts = ['start_date' => 'date', 'end_date' => 'date', 'active' => 'bool'];
 
     public function subscriber()
     {
@@ -20,9 +23,26 @@ class Subscription extends Model
         return $this->belongsTo(Plan::class);
     }
 
+    public function addons()
+    {
+        return $this->hasMany(Addon::class);
+    }
+
     public function payments()
     {
         return $this->hasMany(Payment::class);
+    }
+
+    public function serviceCredits()
+    {
+        return $this->hasMany(ServiceCredit::class);
+    }
+
+    // due date is the day-of-month of start_date for any given month
+    public function dueDateForMonth(Carbon $month): Carbon
+    {
+        $day = (int)$this->start_date->day;
+        return (clone $month)->day($day); // $month is first-of-month
     }
 
     public function discount()
@@ -53,4 +73,3 @@ class Subscription extends Model
         return $this->hasMany(SubscriptionHistory::class);
     }
 }
-

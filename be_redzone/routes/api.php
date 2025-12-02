@@ -1,10 +1,11 @@
 <?php
 
 use App\Http\Controllers\Api\PlanController;
+use App\Http\Controllers\Api\SubscriberController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Auth\RegisteredUserController;
-use App\Http\Controllers\SubscriberController;
-use App\Http\Controllers\SubscriptionController;
+
+use App\Http\Controllers\Api\SubscriptionController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -16,13 +17,14 @@ Route::post('/register', [RegisteredUserController::class, 'store']);
 
 Route::get('/subscribers', [SubscriberController::class, 'getSubscribers']);
 Route::get('/subscribers-with-dues', [SubscriberController::class, 'getSubscribersWithDues']);
-Route::get('/subscriptions', [SubscriptionController::class, 'index']);
-Route::get('/subscriptions/{id}', [SubscriptionController::class, 'show']);
+// Route::get('/subscriptions', [SubscriptionController::class, 'index']);
+// Route::get('/subscriptions/{id}', [SubscriptionController::class, 'show']);
 
 
 // Route::get('/plans', [PlanController::class, 'index'])->name('plans.index');
 Route::apiResource('plans', PlanController::class);
 Route::apiResource('subscribers', SubscriberController::class);
+Route::apiResource('subscriptions', SubscriptionController::class);
 
 
 Route::get('/subscribers/with-dues', [SubscriberController::class, 'subscribersWithDues'])->name('subscribers.with-dues');
