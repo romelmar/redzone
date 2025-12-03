@@ -2,6 +2,8 @@ import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import Plans from '@/pages/Plans/Index.vue'
 
+import SubscriptionsIndex from '@/pages/Subscriptions/Index.vue';
+
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
@@ -25,6 +27,18 @@ const router = createRouter({
           path: '/subscribers',
           name: 'subscribers',
           component: () => import('@/pages/Subscribers/Index.vue'),
+          meta: { requiresAuth: true },
+        },
+      ],
+    },
+    {
+      path: '/',
+      component: () => import('../layouts/default.vue'),
+      children: [
+        {
+          path: '/subscriptions',
+          name: 'subscriptions',
+          component: SubscriptionsIndex,
           meta: { requiresAuth: true },
         },
       ],

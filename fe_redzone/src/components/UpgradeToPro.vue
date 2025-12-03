@@ -2,7 +2,7 @@
   <VBtn
     color="error"
     class="product-upgrade-to-pro"
-    href="https://themeselection.com/item/sneat-vuetify-vuejs-admin-template/"
+    href="https://sites.google.com/view/romelmar-c-alejandrino/home/item/sneat-vuetify-vuejs-admin-template/"
     target="_blank"
     rel="noopener noreferrer"
   >
@@ -26,7 +26,7 @@
         <VCardText>
           <VBtn
             class="me-4"
-            href="https://themeselection.com/item/sneat-vuetify-vuejs-admin-template/?tab=details#details"
+            href="https://sites.google.com/view/romelmar-c-alejandrino/home/item/sneat-vuetify-vuejs-admin-template/?tab=details#details"
             target="_blank"
             rel="noopener noreferrer"
           >
@@ -34,7 +34,7 @@
           </VBtn>
           <VBtn
             variant="outlined"
-            href="https://themeselection.com/item/sneat-vuetify-vuejs-admin-template/"
+            href="https://sites.google.com/view/romelmar-c-alejandrino/home/item/sneat-vuetify-vuejs-admin-template/"
             target="_blank"
             rel="noopener noreferrer"
           >

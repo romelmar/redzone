@@ -1,12 +1,15 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import axios from 'axios'
+import { useToastStore } from '@/stores/toast'
 
 const subscribers = ref([])
 const dialog = ref(false)
 const editId = ref(null)
 const form = ref({ name: '', email: '', phone: '', address: '' })
 const loading = ref(false)
+const toast = useToastStore()
+
 
 const fetchSubscribers = async () => {
   loading.value = true
@@ -19,16 +22,17 @@ const saveSubscriber = async () => {
   try {
     if (editId.value) {
       await axios.put(`/api/subscribers/${editId.value}`, form.value)
-      alert('Subscriber updated successfully')
+      toast.show('Subscriber updated successfully!', 'success')
+      
     } else {
       await axios.post('/api/subscribers', form.value)
-      alert('Subscriber created successfully')
+      toast.show('Subscriber created successfully!', 'success')
     }
     dialog.value = false
     resetForm()
     fetchSubscribers()
   } catch (err) {
-    alert('Error saving subscriber')
+    toast.show('Error saving subscriber', 'error')
   }
 }
 

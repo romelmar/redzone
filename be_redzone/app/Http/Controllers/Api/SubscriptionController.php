@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\{Subscription, Subscriber, Plan, Addon, Payment, ServiceCredit};
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class SubscriptionController extends Controller
 {
@@ -38,13 +39,16 @@ class SubscriptionController extends Controller
      */
     public function store(Request $request, Subscriber $subscriber)
     {
+
+        Log::info($request->all());
         $data = $request->validate([
+            'subscriber_id'          => 'required|exists:subscribers,id',
             'plan_id'          => 'required|exists:plans,id',
             'start_date'       => 'required|date',
             'monthly_discount' => 'nullable|numeric|min:0'
         ]);
 
-        $data['subscriber_id'] = $subscriber->id;
+        // $data['subscriber_id'] = $subscriber->id;
 
         $subscription = Subscription::create($data);
 

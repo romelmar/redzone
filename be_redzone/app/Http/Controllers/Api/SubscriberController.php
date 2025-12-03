@@ -46,6 +46,8 @@ class SubscriberController extends Controller
         $subscriber->update($data);
 
         return response()->json(['message' => 'Subscriber updated successfully', 'subscriber' => $subscriber]);
+
+        
     }
 
     public function destroy(Subscriber $subscriber)

@@ -1,8 +1,7 @@
 <script setup>
 import { useTheme } from 'vuetify'
 import VerticalNavSectionTitle from '@/@layouts/components/VerticalNavSectionTitle.vue'
-import upgradeBannerDark from '@images/pro/upgrade-banner-dark.png'
-import upgradeBannerLight from '@images/pro/upgrade-banner-light.png'
+
 import VerticalNavLayout from '@layouts/components/VerticalNavLayout.vue'
 import VerticalNavLink from '@layouts/components/VerticalNavLink.vue'
 
@@ -13,9 +12,7 @@ import UserProfile from '@/layouts/components/UserProfile.vue'
 
 const vuetifyTheme = useTheme()
 
-const upgradeBanner = computed(() => {
-  return vuetifyTheme.global.name.value === 'light' ? upgradeBannerLight : upgradeBannerDark
-})
+
 </script>
 
 <template>
@@ -68,6 +65,12 @@ const upgradeBanner = computed(() => {
         title: 'Subscribers',
         icon: 'bx-user',
         to: '/subscribers',
+        exact: false, // stays active for /subscribers/* too
+      }" />
+      <VerticalNavLink :item="{
+        title: 'Subscribtions',
+        icon: 'bx-user',
+        to: '/subscriptions',
         exact: false, // stays active for /subscribers/* too
       }" />
       <VerticalNavLink :item="{
@@ -134,14 +137,7 @@ const upgradeBanner = computed(() => {
       }" />
     </template>
 
-    <template #after-vertical-nav-items>
-      <!-- 👉 illustration -->
-      <a href="https://themeselection.com/item/sneat-vuetify-vuejs-admin-template" target="_blank"
-        rel="noopener noreferrer" style="margin-left: 7px;">
-        <img :src="upgradeBanner" alt="upgrade-banner" transition="scale-transition" class="upgrade-banner mx-auto"
-          style="max-width: 230px;">
-      </a>
-    </template>
+
 
     <!-- 👉 Pages -->
     <slot />

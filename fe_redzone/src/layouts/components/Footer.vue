@@ -12,34 +12,27 @@
         class="mx-1"
       />
       By <a
-        href="https://themeselection.com"
+        href="https://sites.google.com/view/romelmar-c-alejandrino/home"
         target="_blank"
         rel="noopener noreferrer"
         class="text-primary ms-1"
-      >ThemeSelection</a>
+      >Romelmar Alejandrino</a>
     </span>
-    <span class="d-flex align-center">
-      Distributed By <a
-        href="https://themewagon.com"
-        target="_blank"
-        rel="noopener noreferrer"
-        class="text-primary ms-1"
-      >ThemeWagon</a>
-    </span>
+>
     <!-- 👉 Footer: right content -->
-    <span class="d-md-flex gap-x-4 text-primary d-none">
+    <!-- <span class="d-md-flex gap-x-4 text-primary d-none">
       <a
-        href="https://themeselection.com/license/"
+        href="https://sites.google.com/view/romelmar-c-alejandrino/home/license/"
         target="noopener noreferrer"
       >License</a>
       <a
-        href="https://themeselection.com/"
+        href="https://sites.google.com/view/romelmar-c-alejandrino/home/"
         target="noopener noreferrer"
       >More Themes</a>
       <a
         href="https://demos.themeselection.com/sneat-vuetify-vuejs-admin-template/documentation/"
         target="noopener noreferrer"
       >Documentation</a>
-    </span>
+    </span> -->
   </div>
 </template>
