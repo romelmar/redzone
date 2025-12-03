@@ -1,7 +1,7 @@
 <script setup>
 import { PerfectScrollbar } from 'vue3-perfect-scrollbar'
 import { useDisplay } from 'vuetify'
-import logo from '@images/logo.svg?raw'
+import logo from '@images/logo.png'
 
 const props = defineProps({
   tag: {
@@ -39,49 +39,30 @@ const handleNavScroll = evt => {
 </script>
 
 <template>
-  <Component
-    :is="props.tag"
-    ref="refNav"
-    class="layout-vertical-nav"
-    :class="[
-      {
-        'visible': isOverlayNavActive,
-        'scrolled': isVerticalNavScrolled,
-        'overlay-nav': mdAndDown,
-      },
-    ]"
-  >
+  <Component :is="props.tag" ref="refNav" class="layout-vertical-nav" :class="[
+    {
+      'visible': isOverlayNavActive,
+      'scrolled': isVerticalNavScrolled,
+      'overlay-nav': mdAndDown,
+    },
+  ]">
     <!-- 👉 Header -->
     <div class="nav-header">
       <slot name="nav-header">
-        <RouterLink
-          to="/"
-          class="app-logo d-flex align-center gap-x-3 app-title-wrapper"
-        >
-          <div
-            class="d-flex"
-            v-html="logo"
-          />
+        <RouterLink to="/"  >
 
-          <h1 class="leading-normal">
-            SubscripApp
-          </h1>
+          <div class="center-container">
+            <img :src="logo" alt="Logo" height="120" />
+          </div>
         </RouterLink>
       </slot>
     </div>
     <slot name="before-nav-items">
       <div class="vertical-nav-items-shadow" />
     </slot>
-    <slot
-      name="nav-items"
-      :update-is-vertical-nav-scrolled="updateIsVerticalNavScrolled"
-    >
-      <PerfectScrollbar
-        tag="ul"
-        class="nav-items"
-        :options="{ wheelPropagation: false }"
-        @ps-scroll-y="handleNavScroll"
-      >
+    <slot name="nav-items" :update-is-vertical-nav-scrolled="updateIsVerticalNavScrolled">
+      <PerfectScrollbar tag="ul" class="nav-items" :options="{ wheelPropagation: false }"
+        @ps-scroll-y="handleNavScroll">
         <slot />
       </PerfectScrollbar>
     </slot>
@@ -154,5 +135,14 @@ const handleNavScroll = evt => {
       }
     }
   }
+}
+</style>
+
+<style scoped>
+.center-container {
+  /* This centers anything inside it that behaves like text (which images do) */
+  text-align: center;
+  margin-top: 20px;
+  /* Add some space above */
 }
 </style>

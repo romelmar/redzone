@@ -1,7 +1,7 @@
 <script setup>
 import { useAuthStore } from '@/stores/auth'; // 👈 import your auth store
 import { useToastStore } from '@/stores/toast';
-import avatar1 from '@images/avatars/avatar-1.png';
+import avatar1 from '@images/avatars/sano.jpg';
 import { useRouter } from 'vue-router'; // 👈 import router to redirect
 
 const auth = useAuthStore()

@@ -1,5 +1,5 @@
 <script setup>
-import avatar1 from '@images/avatars/avatar-1.png'
+import avatar1 from '@images/avatars/sano.jpg'
 import avatar4 from '@images/avatars/avatar-4.png'
 import avatar8 from '@images/avatars/avatar-8.png'
 

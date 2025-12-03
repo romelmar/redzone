@@ -23,7 +23,7 @@ const saveSubscriber = async () => {
     if (editId.value) {
       await axios.put(`/api/subscribers/${editId.value}`, form.value)
       toast.show('Subscriber updated successfully!', 'success')
-      
+
     } else {
       await axios.post('/api/subscribers', form.value)
       toast.show('Subscriber created successfully!', 'success')
@@ -69,6 +69,7 @@ onMounted(fetchSubscribers)
       <VTable v-else fixed-header height="400px">
         <thead>
           <tr>
+            <th>#</th>
             <th>Name</th>
             <th>Email</th>
             <th>Phone</th>
@@ -77,7 +78,8 @@ onMounted(fetchSubscribers)
           </tr>
         </thead>
         <tbody>
-          <tr v-for="subscriber in subscribers" :key="subscriber.id">
+          <tr v-for="(subscriber, index) in subscribers" :key="subscriber.id">
+            <td>{{ index + 1 }}</td>
             <td>{{ subscriber.name }}</td>
             <td>{{ subscriber.email }}</td>
             <td>{{ subscriber.phone }}</td>
