@@ -9,7 +9,8 @@ Route::get('/', function () {
 });
 
 
-Route::get('/statements/{subscriptionId}', [StatementController::class, 'index']);
+// Route::get('/statements/{subscriptionId}', [StatementController::class, 'index']);
 
-Route::get('/subscriptions/{subscription}/soa', [SubscriptionController::class, 'downloadSoa']);
+// Route::get('/subscriptions/{subscription}/soa', [SubscriptionController::class, 'downloadSoa']);
+
 require __DIR__.'/auth.php';
