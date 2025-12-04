@@ -78,6 +78,26 @@ const vuetifyTheme = useTheme()
         icon: 'bx-list-ul',
         to: '/plans',
       }" />
+      <VerticalNavLink :item="{
+        title: 'Addons',
+        icon: 'bx-extension', 
+        to: '/addons',
+      }" />
+      <VerticalNavLink :item="{
+        title: 'Payments',
+        icon: 'bx-wallet-alt',
+        to: '/payments',
+      }" />
+      <VerticalNavLink :item="{
+        title: 'Service Credits',
+        icon: 'bx-coin',
+        to: '/service-credits',
+      }" />
+      <VerticalNavLink :item="{
+        title: 'Subsribers With Dues',
+        icon: 'bx-coin',
+        to: '/subscribers-with-dues',
+      }" />
       <!-- <VerticalNavLink
         :item="{
           title: 'Account Settings',

@@ -28,7 +28,7 @@ import axios from 'axios'
 const subscribers = ref([])
 
 onMounted(async () => {
-  const response = await axios.get('/api/subscribers-with-dues')
+  const response = await axios.get('/api/dues')
   subscribers.value = response.data
 })
 </script>

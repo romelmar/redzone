@@ -1,5 +1,11 @@
 <script setup>
 import { ref, onMounted } from 'vue'
+import {
+  fetchSubscriptions,
+  createSubscription,
+  updateSubscription,
+  deleteSubscription,
+} from "@/services/subscriptions";
 import axios from 'axios'
 import { formatIsoToReadable } from '@/helpers/dateUtils';
 import { useToastStore } from '@/stores/toast'
@@ -10,6 +16,7 @@ const plans = ref([])
 
 const dialog = ref(false)
 const editId = ref(null)
+const loading = ref(false)
 const toast = useToastStore()
 
 const rawDate = ref('');
@@ -23,11 +30,19 @@ const form = ref({
   start_date: '',
   monthly_discount: 0,
 })
-
+const isEditing = ref(false);
 const load = async () => {
-  const res = await axios.get('/api/subscriptions')
-  subscriptions.value = res.data
-}
+  loading.value = true;
+  try {
+    const { data } = await fetchSubscriptions();
+    subscribers.value = data.data ?? data;
+  } catch (e) {
+    error.value = "Failed to load subscribers";
+  } finally {
+    loading.value = false;
+  }
+};
+
 
 const loadDropdowns = async () => {
   subscribers.value = (await axios.get('/api/subscribers')).data
@@ -80,10 +95,40 @@ const resetForm = () => {
     start_date: '',
     monthly_discount: 0,
   }
-  editId.value = null
+  isEditing.value = false;
+  dialog.value = false;
 }
 
-// -----------------------------------------------------------
+
+const submit = async () => {
+  try {
+    if (isEditing.value) {
+      await updateSubscription(form.value.id, form.value);
+      toast.show('Subscription updated successfully!', 'success')
+    } else {
+      await createSubscription(form.value);
+      toast.show('Subscription created successfully!', 'success')
+    }
+
+    resetForm();
+    await load();
+  } catch (e) {
+    error.value = "Failed to save subscriber";
+  }
+};
+
+const edit = (s) => {
+  form.value = { ...s };
+  isEditing.value = true;
+  dialog.value = true;
+};
+
+const remove = async (s) => {
+  if (!confirm(`Delete subscriber ${s.name}?`)) return;
+  await deleteSubscription(s.id);
+  toast.show('Subscription Deleted successfully!', 'success')
+  await load();
+};
 
 onMounted(async () => {
   await load()
@@ -94,15 +139,17 @@ onMounted(async () => {
   <VCard class="p-6">
     <VCardTitle class="d-flex justify-space-between align-center">
       <span>Subscriptions</span>
-      <VBtn color="primary" @click="dialog = true">Add Subscription</VBtn>
+      <VBtn color="primary" @click="openCreate">Add Subscription</VBtn>
     </VCardTitle>
 
     <VCardText>
-      <VTable fixed-header height="400px">
+      <div v-if="loading" class="text-center py-10">Loading...</div>
+
+      <VTable v-else fixed-header height="650px">
         <thead>
           <tr>
             <th>#</th>
-            <th>Subscriber</th>
+            <th>Subscription</th>
             <th>Plan</th>
             <th>Start Date</th>
             <th>Discount</th>
@@ -110,34 +157,20 @@ onMounted(async () => {
           </tr>
         </thead>
 
-        <tbody v-if="subscriptions.length">
-          <tr v-for="(sub, index) in subscriptions" :key="sub.id">
+        <tbody>
+          <tr v-for="(s, index) in subscribers" :key="s.id">
             <td>{{ index + 1 }}</td>
-            <td>{{ sub.subscriber.name }}</td>
-            <td>{{ sub.plan.name }}</td>
-            <td>{{ formatIsoToReadable(sub.start_date)  }}</td>
-            <td>{{ sub.monthly_discount ?? 0 }}</td>
-            <td>
-              <VBtn
-                size="small"
-                color="info"
-                class="me-2"
-                @click="editSubscription(sub)"
-              >
-                Edit
-              </VBtn>
+            <td>{{ s.subscriber.name }}</td>
+            <td>{{ s.plan.name }}</td>
+            <td>{{ formatIsoToReadable(s.start_date)  }}</td>
+            <td>{{ s.monthly_discount ?? 0 }}</td>
 
-              <VBtn size="small" color="red" @click="destroy(sub.id)">
+            <td class="d-flex mt-2">
+              <VBtn color="warning" size="small"   class="mr-2" @click="edit(s)">Edit</VBtn>
+
+              <VBtn color="error" size="small" @click="remove(s)">
                 Delete
               </VBtn>
-            </td>
-          </tr>
-        </tbody>
-
-        <tbody v-else>
-          <tr>
-            <td colspan="6" class="text-center py-4">
-              No subscriptions found.
             </td>
           </tr>
         </tbody>
@@ -145,16 +178,16 @@ onMounted(async () => {
     </VCardText>
   </VCard>
 
-  <!-- Dialog -->
+  <!-- DIALOG FORM -->
   <VDialog v-model="dialog" max-width="500px">
     <VCard>
       <VCardTitle>
-        {{ editId ? 'Edit Subscription' : 'Add Subscription' }}
+        {{ isEditing ? "Edit Subscription" : "Add Subscription" }}
       </VCardTitle>
 
       <VCardText>
         <VSelect
-          label="Subscriber"
+          label="Subscription"
           :items="subscribers"
           item-title="name"
           item-value="id"
@@ -170,26 +203,20 @@ onMounted(async () => {
           v-model="form.plan_id"
           outlined dense
         />
-
         <VTextField
           type="date"
           label="Start Date"
           v-model="form.start_date"
           outlined dense
         />
-
-        <VTextField
-          label="Monthly Discount"
-          type="number"
-          v-model="form.monthly_discount"
-          outlined dense
-        />
+        <VTextField label="Monthly Discount" v-model="form.monthly_discount" outlined dense />
       </VCardText>
 
-      <div class="d-flex justify-end pa-4">
-        <VBtn color="grey" variant="text" @click="dialog = false">Cancel</VBtn>
-        <VBtn color="primary" variant="flat" @click="saveSubscription">
-          {{ editId ? 'Update' : 'Save' }}
+      <div class="d-flex justify-end pa-4 ga-2">
+        <VBtn variant="text" @click="resetForm()">Cancel</VBtn>
+
+        <VBtn color="primary" variant="flat" @click="submit">
+          {{ isEditing ? "Update" : "Save" }}
         </VBtn>
       </div>
     </VCard>

@@ -19,6 +19,8 @@ class SubscriptionController extends Controller
                 ->latest()
                 ->get()
         );
+
+                // return response()->json(Plan::latest()->get());
     }
 
     /**

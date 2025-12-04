@@ -1,72 +1,91 @@
 <script setup>
-import { ref, onMounted } from 'vue'
-import axios from 'axios'
+import { ref, onMounted } from "vue";
+import {
+  fetchSubscribers,
+  createSubscriber,
+  updateSubscriber,
+  deleteSubscriber,
+} from "@/services/subscribers";
 import { useToastStore } from '@/stores/toast'
-
-const subscribers = ref([])
-const dialog = ref(false)
-const editId = ref(null)
-const form = ref({ name: '', email: '', phone: '', address: '' })
-const loading = ref(false)
 const toast = useToastStore()
 
+const subscribers = ref([]);
+const loading = ref(false);
+const error = ref(null);
+const dialog = ref(false);
 
-const fetchSubscribers = async () => {
-  loading.value = true
-  const { data } = await axios.get('/api/subscribers')
-  subscribers.value = data
-  loading.value = false
-}
+const form = ref({
+  id: null,
+  name: "",
+  email: "",
+  phone: "",
+  address: "",
+});
 
-const saveSubscriber = async () => {
+const isEditing = ref(false);
+
+const load = async () => {
+  loading.value = true;
   try {
-    if (editId.value) {
-      await axios.put(`/api/subscribers/${editId.value}`, form.value)
-      toast.show('Subscriber updated successfully!', 'success')
-
-    } else {
-      await axios.post('/api/subscribers', form.value)
-      toast.show('Subscriber created successfully!', 'success')
-    }
-    dialog.value = false
-    resetForm()
-    fetchSubscribers()
-  } catch (err) {
-    toast.show('Error saving subscriber', 'error')
+    const { data } = await fetchSubscribers();
+    subscribers.value = data.data ?? data;
+  } catch (e) {
+    error.value = "Failed to load subscribers";
+  } finally {
+    loading.value = false;
   }
-}
-
-const editSubscriber = (subscriber) => {
-  form.value = { ...subscriber }
-  editId.value = subscriber.id
-  dialog.value = true
-}
-
-const deleteSubscriber = async (id) => {
-  if (confirm('Are you sure you want to delete this subscriber?')) {
-    await axios.delete(`/api/subscribers/${id}`)
-    fetchSubscribers()
-  }
-}
+};
 
 const resetForm = () => {
-  form.value = { name: '', email: '', phone: '', address: '' }
-  editId.value = null
-}
+  form.value = { id: null, name: "", email: "", phone: "", address: "" };
+  isEditing.value = false;
+  dialog.value = false;
+};
 
-onMounted(fetchSubscribers)
+const submit = async () => {
+  try {
+    if (isEditing.value) {
+      await updateSubscriber(form.value.id, form.value);
+      toast.show('Subscriber updated successfully!', 'success')
+    } else {
+      await createSubscriber(form.value);
+      toast.show('Subscriber created successfully!', 'success')
+    }
+
+    resetForm();
+    await load();
+  } catch (e) {
+    error.value = "Failed to save subscriber";
+  }
+};
+
+const edit = (s) => {
+  form.value = { ...s };
+  isEditing.value = true;
+  dialog.value = true;
+};
+
+const remove = async (s) => {
+  if (!confirm(`Delete subscriber ${s.name}?`)) return;
+  await deleteSubscriber(s.id);
+  toast.show('Subscriber Deleted successfully!', 'success')
+  await load();
+};
+
+onMounted(load);
 </script>
 
 <template>
   <VCard class="p-6">
     <VCardTitle class="d-flex justify-space-between align-center">
       <span>Subscribers</span>
-      <VBtn color="primary" @click="dialog = true">Add Subscriber</VBtn>
+      <VBtn color="primary" @click="openCreate">Add Subscriber</VBtn>
     </VCardTitle>
 
     <VCardText>
       <div v-if="loading" class="text-center py-10">Loading...</div>
-      <VTable v-else fixed-header height="400px">
+
+      <VTable v-else fixed-header height="650px">
         <thead>
           <tr>
             <th>#</th>
@@ -77,16 +96,21 @@ onMounted(fetchSubscribers)
             <th>Actions</th>
           </tr>
         </thead>
+
         <tbody>
-          <tr v-for="(subscriber, index) in subscribers" :key="subscriber.id">
+          <tr v-for="(s, index) in subscribers" :key="s.id">
             <td>{{ index + 1 }}</td>
-            <td>{{ subscriber.name }}</td>
-            <td>{{ subscriber.email }}</td>
-            <td>{{ subscriber.phone }}</td>
-            <td>{{ subscriber.address }}</td>
-            <td>
-              <VBtn color="warning" size="small" class="mr-2" @click="editSubscriber(subscriber)">Edit</VBtn>
-              <VBtn color="error" size="small" @click="deleteSubscriber(subscriber.id)">Delete</VBtn>
+            <td>{{ s.name }}</td>
+            <td>{{ s.email }}</td>
+            <td>{{ s.phone }}</td>
+            <td>{{ s.address }}</td>
+
+            <td class="d-flex mt-2">
+              <VBtn color="warning" size="small"  class="mr-2" @click="edit(s)">Edit</VBtn>
+
+              <VBtn color="error" size="small" @click="remove(s)">
+                Delete
+              </VBtn>
             </td>
           </tr>
         </tbody>
@@ -94,20 +118,25 @@ onMounted(fetchSubscribers)
     </VCardText>
   </VCard>
 
-  <!-- Dialog -->
+  <!-- DIALOG FORM -->
   <VDialog v-model="dialog" max-width="500px">
     <VCard>
-      <VCardTitle>{{ editId ? 'Edit Subscriber' : 'Add Subscriber' }}</VCardTitle>
+      <VCardTitle>
+        {{ isEditing ? "Edit Subscriber" : "Add Subscriber" }}
+      </VCardTitle>
+
       <VCardText>
         <VTextField label="Name" v-model="form.name" outlined dense />
         <VTextField label="Email" v-model="form.email" outlined dense />
         <VTextField label="Phone" v-model="form.phone" outlined dense />
         <VTextField label="Address" v-model="form.address" outlined dense />
       </VCardText>
-      <div class="d-flex justify-end pa-4">
-        <VBtn color="grey" variant="text" @click="dialog = false">Cancel</VBtn>
-        <VBtn color="primary" variant="flat" @click="saveSubscriber">
-          {{ editId ? 'Update' : 'Save' }}
+
+      <div class="d-flex justify-end pa-4 ga-2">
+        <VBtn variant="text" @click="resetForm()">Cancel</VBtn>
+
+        <VBtn color="primary" variant="flat" @click="submit">
+          {{ isEditing ? "Update" : "Save" }}
         </VBtn>
       </div>
     </VCard>

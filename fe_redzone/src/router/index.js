@@ -14,7 +14,51 @@ const router = createRouter({
       children: [
         {
           path: 'plans',
-          component: () => import('../pages/Plans/Index.vue'),
+          component: () => import('@/views/plans/Plans.vue'),
+          meta: { requiresAuth: true },
+        },
+      ],
+    },
+    {
+      path: '/',
+      component: () => import('../layouts/default.vue'),
+      children: [
+        {
+          path: 'addons',
+          component: () => import('@/views/addons/Addons.vue'),
+          meta: { requiresAuth: true },
+        },
+      ],
+    },
+    {
+      path: '/',
+      component: () => import('../layouts/default.vue'),
+      children: [
+        {
+          path: 'payments',
+          component: () => import('@/views/payments/Payments.vue'),
+          meta: { requiresAuth: true },
+        },
+      ],
+    },
+    {
+      path: '/',
+      component: () => import('../layouts/default.vue'),
+      children: [
+        {
+          path: 'service-credits',
+          component: () => import('@/views/service-credits/ServiceCredits.vue'),
+          meta: { requiresAuth: true },
+        },
+      ],
+    },
+    {
+      path: '/',
+      component: () => import('../layouts/default.vue'),
+      children: [
+        {
+          path: 'subscribers-with-dues',
+          component: () => import('@/views/billing/SubscribersWithDues.vue'),
           meta: { requiresAuth: true },
         },
       ],
@@ -26,11 +70,12 @@ const router = createRouter({
         {
           path: '/subscribers',
           name: 'subscribers',
-          component: () => import('@/pages/Subscribers/Index.vue'),
+          component: () => import('@/views/subscribers/Subscribers.vue'),
           meta: { requiresAuth: true },
         },
       ],
     },
+    
     {
       path: '/',
       component: () => import('../layouts/default.vue'),
@@ -38,7 +83,7 @@ const router = createRouter({
         {
           path: '/subscriptions',
           name: 'subscriptions',
-          component: SubscriptionsIndex,
+          component: () => import('@/views/subscriptions/Subscriptions.vue'),
           meta: { requiresAuth: true },
         },
       ],

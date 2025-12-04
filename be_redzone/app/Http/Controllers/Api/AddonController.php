@@ -8,9 +8,12 @@ use Illuminate\Http\Request;
 
 class AddonController extends Controller
 {
+    /**
+     * List all addons (optionally filtered by subscription_id).
+     */
     public function index(Request $request)
     {
-        $query = Addon::query()->with('subscription.subscriber');
+        $query = Addon::with('subscription.subscriber');
 
         if ($request->filled('subscription_id')) {
             $query->where('subscription_id', $request->subscription_id);
@@ -19,35 +22,49 @@ class AddonController extends Controller
         return $query->latest()->paginate(20);
     }
 
+    /**
+     * Create a new addon.
+     */
     public function store(Request $request)
     {
         $data = $request->validate([
             'subscription_id' => 'required|exists:subscriptions,id',
             'name'            => 'required|string|max:255',
             'amount'          => 'required|numeric|min:0',
-            'bill_month'      => 'required|date',
+            'bill_month'      => 'nullable|date',  // optional
         ]);
 
-        return Addon::create($data);
+        return Addon::create($data)->load('subscription.subscriber');
     }
 
+    /**
+     * Show single addon.
+     */
     public function show(Addon $addon)
     {
-        return $addon;
+        return $addon->load('subscription.subscriber');
     }
 
+    /**
+     * Update addon.
+     */
     public function update(Request $request, Addon $addon)
     {
         $data = $request->validate([
-            'name'       => 'sometimes|string|max:255',
-            'amount'     => 'sometimes|numeric|min:0',
-            'bill_month' => 'sometimes|date',
+            'subscription_id' => 'sometimes|exists:subscriptions,id',
+            'name'            => 'sometimes|string|max:255',
+            'amount'          => 'sometimes|numeric|min:0',
+            'bill_month'      => 'nullable|date',
         ]);
 
         $addon->update($data);
-        return $addon;
+
+        return $addon->load('subscription.subscriber');
     }
 
+    /**
+     * Delete addon.
+     */
     public function destroy(Addon $addon)
     {
         $addon->delete();

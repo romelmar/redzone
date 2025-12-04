@@ -1,11 +1,15 @@
 <?php
 
+use App\Http\Controllers\Api\AddonController;
+use App\Http\Controllers\Api\PaymentController;
 use App\Http\Controllers\Api\PlanController;
+use App\Http\Controllers\Api\ServiceCreditController;
 use App\Http\Controllers\Api\SubscriberController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Auth\RegisteredUserController;
 
 use App\Http\Controllers\Api\SubscriptionController;
+use App\Http\Controllers\Api\BillingController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -25,6 +29,10 @@ Route::get('/subscribers-with-dues', [SubscriberController::class, 'getSubscribe
 Route::apiResource('plans', PlanController::class);
 Route::apiResource('subscribers', SubscriberController::class);
 Route::apiResource('subscriptions', SubscriptionController::class);
+Route::apiResource('addons', AddonController::class);
+Route::apiResource('payments', PaymentController::class);
+Route::apiResource('serviceCredits', ServiceCreditController::class);
 
 
-Route::get('/subscribers/with-dues', [SubscriberController::class, 'subscribersWithDues'])->name('subscribers.with-dues');
+
+Route::get('/dues', [BillingController::class, 'subscribersWithDues']);
