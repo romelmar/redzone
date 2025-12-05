@@ -6,7 +6,8 @@ namespace App\Services;
 use App\Models\Subscription;
 use Carbon\Carbon;
 
-class BillingService {
+class BillingService
+{
   /**
    * Returns an array with:
    * - previous_balance
@@ -14,7 +15,8 @@ class BillingService {
    * - total_due
    * - due_date (Carbon)
    */
-  public function computeFor(Subscription $sub, Carbon $billMonth): array {
+  public function computeFor(Subscription $sub, Carbon $billMonth): array
+  {
     // Bill month is first day of month (e.g., 2025-11-01)
     $planPrice = $sub->plan->price;
     $discount  = $sub->monthly_discount;
@@ -40,6 +42,13 @@ class BillingService {
 
     $totalAmountDue = round($previousBalance + $currentBill, 2);
 
+    $end   = $billMonth->copy()->endOfMonth();
+    $paymentsTotal = (float) $sub->payments()
+      ->whereDate('paid_at', '<=', $end)
+      ->sum('amount');
+
+    $total_due_current = max(0, ($previousBalance + $currentBill) - $paymentsTotal);
+
     return [
       'previous_balance' => $previousBalance,
       'msf' => $msf,
@@ -48,13 +57,15 @@ class BillingService {
       'outage_days' => $outageDays,
       'outage_credit' => $outageCredit,
       'current_bill' => $currentBill,
-      'total_due' => $totalAmountDue,
+      // 'total_due' => $totalAmountDue,
+      'total_due' => $total_due_current,
       'due_date' => $sub->dueDateForMonth($billMonth),
     ];
   }
 
   // Sum of all monthly “MSF - discount + addons - outageCredit” up to but not including $untilMonth
-  protected function lifetimeChargesUntil(Subscription $sub, Carbon $untilMonth): float {
+  protected function lifetimeChargesUntil(Subscription $sub, Carbon $untilMonth): float
+  {
     $start = $sub->start_date->copy()->startOfMonth();
     $end = $untilMonth->copy()->subMonth(); // last completed month before current
 

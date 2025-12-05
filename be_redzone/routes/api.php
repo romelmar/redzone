@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\AddonController;
 use App\Http\Controllers\Api\PaymentController;
 use App\Http\Controllers\Api\PlanController;
 use App\Http\Controllers\Api\ServiceCreditController;
+use App\Http\Controllers\Api\SOAController;
 use App\Http\Controllers\Api\SubscriberController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Auth\RegisteredUserController;
@@ -36,3 +37,12 @@ Route::apiResource('serviceCredits', ServiceCreditController::class);
 
 
 Route::get('/dues', [BillingController::class, 'subscribersWithDues']);
+// Route::get('/subscriptions/{subscription}/soa-json', [BillingController::class, 'soaJson']);
+// Route::get('/subscriptions/{subscription}/soa', [BillingController::class, 'soaPdf']);
+// Route::post('/subscriptions/{subscription}/send-soa', [BillingController::class, 'sendSoa']);
+Route::get('/subscriptions/{subscription}/soa', [SOAController::class, 'download'])->name('subscriptions.soa.download');
+Route::post('/subscriptions/{subscription}/soa/email', [SOAController::class, 'email'])->name('subscriptions.soa.email');
+
+Route::get('/subscriptions/{subscription}/soa-json', [BillingController::class, 'soaJson']);
+Route::get('/subscriptions/{subscription}/soa',      [BillingController::class, 'soaPdf']);
+Route::post('/subscriptions/{subscription}/send-soa', [BillingController::class, 'sendSoa']);
