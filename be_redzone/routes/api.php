@@ -21,6 +21,7 @@ Route::post('/login', [AuthenticatedSessionController::class, 'store']);
 Route::post('/register', [RegisteredUserController::class, 'store']);
 
 Route::get('/subscribers', [SubscriberController::class, 'getSubscribers']);
+Route::get('/subscribers/search', [SubscriberController::class, 'search']);
 Route::get('/subscribers-with-dues', [SubscriberController::class, 'getSubscribersWithDues']);
 // Route::get('/subscriptions', [SubscriptionController::class, 'index']);
 // Route::get('/subscriptions/{id}', [SubscriptionController::class, 'show']);

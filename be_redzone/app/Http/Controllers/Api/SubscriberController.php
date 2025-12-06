@@ -1,6 +1,7 @@
 <?php
 
 namespace App\Http\Controllers\Api;
+
 use App\Http\Controllers\Controller;
 
 use App\Models\Subscriber;
@@ -11,12 +12,47 @@ use Inertia\Inertia;
 
 class SubscriberController extends Controller
 {
-    public function index()
-    {
-        return response()->json(Subscriber::latest()->get());
+    // public function index()
+    // {
+    //     return response()->json(Subscriber::latest()->get());
+    // }
+
+public function index(Request $request)
+{
+    $search = $request->get('search');
+    $perPage = $request->get('per_page', 20);
+
+    $query = Subscriber::query();
+
+    if ($search) {
+        $query->where(function ($q) use ($search) {
+            $q->where('name', 'like', "%{$search}%")
+              ->orWhere('email', 'like', "%{$search}%")
+              ->orWhere('phone', 'like', "%{$search}%");
+        });
     }
 
-     public function store(Request $request)
+    $subscribers = $query
+        ->withCount('subscriptions')
+        ->orderBy('name')
+        ->paginate($perPage);
+
+    return response()->json($subscribers);
+}
+
+public function search(Request $request)
+{
+    $query = $request->get('query', '');
+
+    return Subscriber::where('name', 'like', "%{$query}%")
+        ->orderBy('name')
+        ->limit(20)                // limit for autocomplete
+        ->get(['id', 'name']);
+}
+
+
+
+    public function store(Request $request)
     {
         $data = $request->validate([
             'name' => 'required|string|max:255',
@@ -46,8 +82,6 @@ class SubscriberController extends Controller
         $subscriber->update($data);
 
         return response()->json(['message' => 'Subscriber updated successfully', 'subscriber' => $subscriber]);
-
-        
     }
 
     public function destroy(Subscriber $subscriber)
@@ -56,5 +90,4 @@ class SubscriberController extends Controller
 
         return response()->json(['message' => 'Subscriber deleted successfully']);
     }
-    
 }

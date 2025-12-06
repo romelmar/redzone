@@ -4,6 +4,7 @@ export function fetchSubscribers(params = {}) {
   return api.get('/api/subscribers', { params })
 }
 
+
 export function createSubscriber(data) {
   return api.post('/api/subscribers', data)
 }
@@ -18,4 +19,10 @@ export function deleteSubscriber(id) {
 
 export function showSubscriber(id) {
   return api.get(`/api/subscribers/${id}`)
+}
+
+export function searchSubscribers(query) {
+  return api.get('/api/subscribers/search', {
+    params: { query }
+  });
 }
