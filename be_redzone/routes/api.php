@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\PlanController;
 use App\Http\Controllers\Api\ServiceCreditController;
 use App\Http\Controllers\Api\SOAController;
 use App\Http\Controllers\Api\SubscriberController;
+use App\Http\Controllers\Api\SubscriptionHistoryController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Auth\RegisteredUserController;
 
@@ -31,6 +32,7 @@ Route::get('/subscribers-with-dues', [SubscriberController::class, 'getSubscribe
 Route::apiResource('plans', PlanController::class);
 Route::apiResource('subscribers', SubscriberController::class);
 Route::apiResource('subscriptions', SubscriptionController::class);
+
 Route::apiResource('addons', AddonController::class);
 Route::apiResource('payments', PaymentController::class);
 Route::apiResource('serviceCredits', ServiceCreditController::class);
@@ -47,3 +49,6 @@ Route::post('/subscriptions/{subscription}/soa/email', [SOAController::class, 'e
 Route::get('/subscriptions/{subscription}/soa-json', [BillingController::class, 'soaJson']);
 Route::get('/subscriptions/{subscription}/soa',      [BillingController::class, 'soaPdf']);
 Route::post('/subscriptions/{subscription}/send-soa', [BillingController::class, 'sendSoa']);
+
+Route::get('/subscriptions/{subscription}/history', [SubscriptionHistoryController::class, 'index']);
+
