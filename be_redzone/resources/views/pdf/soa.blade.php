@@ -24,6 +24,7 @@
         .company-info {
             font-size: 11px;
             line-height: 1.5;
+            
         }
 
         .company-info .highlight {
@@ -49,6 +50,7 @@
         }
 
         .soa-info {
+            margin-top: 20px;
             width: 40%;
             float: right;
             border: 1px solid #000;
@@ -67,19 +69,52 @@
 
         .summary {
             clear: both;
-            padding: 20px 25px;
+            /* padding: 20px 25px; */
+            margin-top: 100px;
         }
 
         .summary table {
-            width: 100%;
+            /* width: 100%; */
             border-collapse: collapse;
+            margin-bottom: 20px;
+            /* border: 1px solid #000;
+             */
         }
 
         .summary th,
         .summary td {
-            padding: 6px;
+            /* padding: 5px; */
             border-bottom: 1px solid #ddd;
             text-align: left;
+            padding: 5px;
+        }
+
+        .summary thead {
+            border-bottom: 5px solid #ddd;
+        }
+
+        /* Style the container TD to control padding */
+        .seperator-cell {
+            border: none !important;
+            /* Remove any default table cell borders */
+            padding: 10px 0;
+            /* Add vertical spacing */
+        }
+
+        /* Style the DIV to be the dashed line itself */
+        .seperator-line {
+            border-top: 2px dashed #000;
+            /* This border will be rendered evenly */
+            height: 0;
+            /* The div can be zero height, the border is its height */
+            margin: 0 10px;
+            /* Optional: adds a little space from the table edges */
+        }
+
+
+        /* Optional: Ensure the second row of the tfoot aligns nicely */
+        tfoot td {
+            padding: 5px 0;
         }
 
         .summary .total {
@@ -91,6 +126,7 @@
         }
 
         .notice {
+            margin-top: 50px;
             padding: 15px 25px;
             font-size: 11px;
         }
@@ -130,9 +166,83 @@
         <p><strong>Name:</strong> {{ $subscription->subscriber->name }}</p>
         <p><strong>Address:</strong> {{ $subscription->subscriber->address ?? 'N/A' }}</p>
         <p><strong>Contact:</strong> {{ $subscription->subscriber->contact ?? 'N/A' }}</p>
+        <div class="summary">
+            <h3>Statement Summary</h3>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Previous Bill Charges</th>
+                        <th>Amount</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td></td>
+                        <td></td>
+                    </tr>
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <td colspan="2" class="seperator-cell">
+                            <!-- Add a div inside the cell -->
+                            <div class="seperator-line"></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><strong>Remaining Balance from Previous Bill:</strong></td>
+                        <td>P{{ number_format($soa['previous_balance'], 2) }}</td>
+                    </tr>
+                </tfoot>
+            </table>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Current Bill Charges</th>
+                        <th>Amount</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Monthly Service Fee ({{ $subscription->plan->name }})</td>
+                        <td style="text-align:right;">P{{ number_format($subscription->plan->price, 2) }}</td>
+                    </tr>
+                    <tr>
+                        <td>Amount Refunded ({{ $soa['credits_days'] }} day/s outage)</td>
+                        <td style="text-align:right;">-P{{ number_format($soa['credits_amount'], 2) }} </td>
+                    </tr>
+                    <tr>
+                        <td>VAT </td>
+                        <td style="text-align:right;">P0.00</td>
+                    </tr>
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <td colspan="2" class="seperator-cell">
+                            <!-- Add a div inside the cell -->
+                            <div class="seperator-line"></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td colspan="2"><strong>Total Current Bill</strong></td>
+
+                    </tr>
+                    
+                    <tr>
+                        <td colspan="2">
+                            <p class="total">Total Amount Due: P{{ number_format($soa['total_due'], 2) }}</p>
+                        </td>
+                    </tr>
+
+                </tfoot>
+            </table>
+
+        </div>
+
     </div>
 
     <div class="soa-info">
+        <h1>Statement of Account</h1>
         <table>
             <tr>
                 <td><strong>Bill Number:</strong></td>
@@ -163,34 +273,6 @@
                 <td><strong>P{{ number_format($soa['total_due'], 2) }}</strong></td>
             </tr>
         </table>
-    </div>
-
-    {{-- Statement Summary --}}
-    <div class="summary">
-        <table>
-            <thead>
-                <tr>
-                    <th>Description</th>
-                    <th style="text-align:right;">Amount</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td>Monthly Service Fee ({{ $subscription->plan->name }})</td>
-                    <td style="text-align:right;">P{{ number_format($subscription->plan->price, 2) }}</td>
-                </tr>
-                @foreach ($subscription->payments as $payment)
-                    <tr>
-                        <td>Payment - {{ \Carbon\Carbon::parse($payment->paid_at)->format('M d, Y') }}</td>
-                        <td style="text-align:right;">-P{{ number_format($payment->amount, 2) }}</td>
-                    </tr>
-                @endforeach
-            </tbody>
-        </table>
-
-        <p class="total">
-            Total Amount Due: P{{ number_format($soa['total_due'], 2) }}
-        </p>
     </div>
 
     {{-- Notice --}}

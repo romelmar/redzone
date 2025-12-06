@@ -46,6 +46,7 @@ class BillingController extends Controller
                 'base_amount'       => (float)($base - $discount),
                 'addons_amount'     => $addons,
                 'credits_amount'    => $credits,
+
                 'previous_balance'  => (float)$calc['previous_balance'],
 
                 // this already includes previous balance + current bill
@@ -75,6 +76,13 @@ class BillingController extends Controller
         $addons = (float)$calc['addons_total'];
         $credits = (float)$calc['outage_credit'];
 
+        $start = $billMonth->copy()->startOfMonth();
+        $end   = $billMonth->copy()->endOfMonth();
+
+        $creditsDays = $subscription->serviceCredits()
+            ->whereBetween('bill_month', [$start, $end])
+            ->sum('outage_days');
+
         $soa = [
             'subscription_id'   => $subscription->id,
             'subscriber'        => $subscription->subscriber?->name ?? '',
@@ -87,6 +95,7 @@ class BillingController extends Controller
             'base_amount'       => (float)($base - $discount),
             'addons_amount'     => $addons,
             'credits_amount'    => $credits,
+            'credits_days'      => $creditsDays,
             'discount'          => $discount,
             'current_bill'      => (float)$calc['current_bill'],
             'total_due'         => (float)$calc['total_due'],
@@ -110,6 +119,13 @@ class BillingController extends Controller
         $discount = (float)$calc['discount'];
         $addons = (float)$calc['addons_total'];
         $credits = (float)$calc['outage_credit'];
+        $start = $billMonth->copy()->startOfMonth();
+        $end   = $billMonth->copy()->endOfMonth();
+
+        $creditsDays = $subscription->serviceCredits()
+            ->whereBetween('bill_month', [$start, $end])
+            ->sum('outage_days');
+
 
         $soa = [
             'subscription'      => $subscription,
@@ -120,6 +136,7 @@ class BillingController extends Controller
             'base_amount'       => (float)($base - $discount),
             'addons_amount'     => $addons,
             'credits_amount'    => $credits,
+            'credits_days'      => $creditsDays,
             'discount'          => $discount,
             'current_bill'      => (float)$calc['current_bill'],
             'total_due'         => (float)$calc['total_due'],
@@ -157,6 +174,12 @@ class BillingController extends Controller
         $discount = (float)$calc['discount'];
         $addons = (float)$calc['addons_total'];
         $credits = (float)$calc['outage_credit'];
+        $start = $billMonth->copy()->startOfMonth();
+        $end   = $billMonth->copy()->endOfMonth();
+
+        $creditsDays = $subscription->serviceCredits()
+            ->whereBetween('bill_month', [$start, $end])
+            ->sum('outage_days');
 
         $soa = [
             'subscription'      => $subscription,
@@ -167,6 +190,7 @@ class BillingController extends Controller
             'base_amount'       => (float)($base - $discount),
             'addons_amount'     => $addons,
             'credits_amount'    => $credits,
+            'credits_days'      => $creditsDays,
             'discount'          => $discount,
             'current_bill'      => (float)$calc['current_bill'],
             'total_due'         => (float)$calc['total_due'],
