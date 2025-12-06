@@ -57,8 +57,8 @@ class BillingService
       'outage_days' => $outageDays,
       'outage_credit' => $outageCredit,
       'current_bill' => $currentBill,
-      // 'total_due' => $totalAmountDue,
-      'total_due' => $total_due_current,
+      'total_due' => $totalAmountDue,
+      // 'total_due' => $total_due_current,
       'due_date' => $sub->dueDateForMonth($billMonth),
     ];
   }
