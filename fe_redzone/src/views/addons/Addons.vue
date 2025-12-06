@@ -14,11 +14,13 @@ const dialog = ref(false)
 
 const addons = ref([])
 const subscriptions = ref([])
+const subscriptionSearch = ref('');
 
 const form = ref({
     id: null,
     subscription_id: null,
     name: '',
+    description: '',   // NEW FIELD
     amount: null,
     bill_month: '',
 })
@@ -39,6 +41,7 @@ const openCreate = () => {
         id: null,
         subscription_id: null,
         name: '',
+        description: '',   // NEW FIELD
         amount: null,
         bill_month: new Date().toISOString().slice(0, 10).replace(/\d{2}$/, '01'),
     }
@@ -50,6 +53,7 @@ const openEdit = (a) => {
         id: a.id,
         subscription_id: a.subscription_id,
         name: a.name,
+        description: '',   // NEW FIELD
         amount: a.amount,
         bill_month: a.bill_month,
     }
@@ -78,6 +82,24 @@ const subscriptionLabel = (a) => {
     return `${sub.subscriber?.name ?? ''} - ${sub.plan?.name ?? ''}`
 }
 
+
+
+
+const sortedSubscriptions = computed(() => {
+    const q = subscriptionSearch.value.toLowerCase();
+
+    return subscriptions.value
+        .filter(s => {
+            const name = s.subscriber?.name?.toLowerCase() ?? '';
+            const plan = s.plan?.name?.toLowerCase() ?? '';
+            return name.includes(q) || plan.includes(q);
+        })
+        .sort((a, b) =>
+            (a.subscriber?.name ?? '').localeCompare(b.subscriber?.name ?? '')
+        );
+});
+
+
 onMounted(load)
 </script>
 
@@ -94,6 +116,7 @@ onMounted(load)
                     <tr>
                         <th>Subscription</th>
                         <th>Name</th>
+                        <th>Description</th>
                         <th>Amount</th>
                         <th>Bill Month</th>
                         <th class="text-end">Actions</th>
@@ -103,6 +126,8 @@ onMounted(load)
                     <tr v-for="a in addons" :key="a.id">
                         <td>{{ subscriptionLabel(a) }}</td>
                         <td>{{ a.name }}</td>
+                        <td>{{ a.description }}</td>
+
                         <td>₱{{ Number(a.amount).toFixed(2) }}</td>
                         <td>{{ formatIsoToReadable(a.bill_month) }}</td>
                         <td class="text-end">
@@ -124,12 +149,39 @@ onMounted(load)
             <VCardText>
                 <VRow>
                     <VCol cols="12">
-                        <VSelect v-model="form.subscription_id" :items="subscriptions" item-title="subscriber.name"
-                            item-value="id" label="Subscription (Subscriber)" />
+                        <VAutocomplete v-model="form.subscription_id" v-model:search="subscriptionSearch"
+                            :items="sortedSubscriptions" :custom-filter="() => true"
+                            :item-title="item => item.subscriber?.name" item-value="id"
+                            label="Subscription (Subscriber)" clearable hide-selected variant="outlined"
+                            :menu-props="{ maxHeight: 350 }">
+                            <!-- Custom Item Template -->
+                            <template #item="{ props, item }">
+                                <VListItem v-bind="props">
+                                    <!-- <VListItemTitle class="font-weight-bold">
+                                        {{ item.raw.subscriber?.name }}
+                                    </VListItemTitle> -->
+                                    <VListItemSubtitle>
+                                        {{ item.raw.plan?.name }} — ₱{{ Number(item.raw.plan?.price ?? 0).toFixed(2) }}
+                                    </VListItemSubtitle>
+                                </VListItem>
+                            </template>
+
+                            <!-- Selected Template -->
+                            <template #selection="{ item }">
+                                <div>{{ item.raw.subscriber?.name }} ({{ item.raw.plan?.name }})</div>
+                            </template>
+                        </VAutocomplete>
+
+
+
                     </VCol>
                     <VCol cols="12">
                         <VTextField label="Name" v-model="form.name" />
                     </VCol>
+                    <VCol cols="12">
+                        <VTextField label="Description" v-model="form.description" clearable />
+                    </VCol>
+
                     <VCol cols="12" md="6">
                         <VTextField label="Amount" type="number" v-model.number="form.amount" />
                     </VCol>

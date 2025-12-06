@@ -13,26 +13,38 @@
             padding: 0;
         }
 
-        .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 15px 25px;
-            border-bottom: 2px solid #000;
+        /* DOMPDF-SAFE HEADER USING TABLE */
+        .header-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 5px;
         }
 
-        .company-info {
+        .header-table td {
+            vertical-align: middle;
+            padding: 10px 20px;
+        }
+
+        .header-left {
+            width: 35%;
+        }
+
+        .header-right {
+            text-align: right;
+            white-space: nowrap;
             font-size: 11px;
-            line-height: 1.5;
-            
+            line-height: 1.4;
         }
 
-        .company-info .highlight {
+        .header-right .highlight {
+            font-size: 14px;
             font-weight: bold;
+            text-transform: uppercase;
         }
+
 
         .bill-header {
-            background: #f44336;
+            background: #a02017;
             color: #fff;
             padding: 6px 12px;
             font-size: 11px;
@@ -53,13 +65,14 @@
             margin-top: 20px;
             width: 40%;
             float: right;
-            border: 1px solid #000;
+
             font-size: 12px;
         }
 
         .soa-info table {
             width: 100%;
             border-collapse: collapse;
+            border: 1px solid #000;
         }
 
         .soa-info td {
@@ -123,6 +136,7 @@
             border: 1px solid #000;
             padding: 8px;
             text-align: right;
+            background: #f5e2c1;
         }
 
         .notice {
@@ -143,18 +157,22 @@
 </head>
 
 <body>
-    {{-- Header --}}
-    <div class="header">
-        <div>
-            <img src="{{ public_path('logo.png') }}" alt="Company Logo" height="120">
-        </div>
-        <div class="company-info">
-            <div class="highlight">{{ config('app.name') }}</div>
-            <div>Brgy. Poblacion, Leon, Iloilo</div>
-            <div>Email: leauncesan@yahoo.com</div>
-            <div>Contact: +63 912 345 6789</div>
-        </div>
-    </div>
+    {{-- HEADER --}}
+    <table class="header-table">
+        <tr>
+            <td class="header-left">
+                <img src="{{ public_path('logo.png') }}" height="105">
+            </td>
+
+            <td class="header-right">
+                <div class="highlight">{{ config('app.name', 'Redzone Wireless Internet Services') }}</div>
+                <div>Brgy. Poblacion, Leon, Iloilo</div>
+                <div>Email: leauncesan@yahoo.com</div>
+                <div>Contact: +63 912 345 6789</div>
+            </td>
+        </tr>
+    </table>
+
 
     {{-- Red Bar --}}
     <p class="bill-header">
@@ -163,9 +181,9 @@
 
     {{-- Account & SOA Info --}}
     <div class="account-info">
-        <p><strong>Name:</strong> {{ $subscription->subscriber->name }}</p>
-        <p><strong>Address:</strong> {{ $subscription->subscriber->address ?? 'N/A' }}</p>
-        <p><strong>Contact:</strong> {{ $subscription->subscriber->contact ?? 'N/A' }}</p>
+        <p>Name:<strong> {{ $subscription->subscriber->name }}</strong></p>
+        <p>Address:<strong> {{ $subscription->subscriber->address ?? 'N/A' }}</strong></p>
+        <p>Contact:<strong> {{ $subscription->subscriber->contact ?? 'N/A' }}</strong></p>
         <div class="summary">
             <h3>Statement Summary</h3>
 
@@ -208,6 +226,10 @@
                         <td style="text-align:right;">P{{ number_format($subscription->plan->price, 2) }}</td>
                     </tr>
                     <tr>
+                        <td>Addons</td>
+                        <td style="text-align:right;">P{{ number_format($soa['addons_amount'], 2) }} </td>
+                    </tr>
+                    <tr>
                         <td>Amount Refunded ({{ $soa['credits_days'] }} day/s outage)</td>
                         <td style="text-align:right;">-P{{ number_format($soa['credits_amount'], 2) }} </td>
                     </tr>
@@ -227,7 +249,7 @@
                         <td colspan="2"><strong>Total Current Bill</strong></td>
 
                     </tr>
-                    
+
                     <tr>
                         <td colspan="2">
                             <p class="total">Total Amount Due: P{{ number_format($soa['total_due'], 2) }}</p>
@@ -273,7 +295,7 @@
                 <td><strong>P{{ number_format($soa['total_due'], 2) }}</strong></td>
             </tr>
         </table>
-    </div>
+
 
     {{-- Notice --}}
     <div class="notice">
@@ -287,7 +309,7 @@
         <p>Please send payment within 5 days upon receiving this invoice to avoid inconvenience.</p>
         <p>Thank You.</p>
     </div>
-
+    </div>
 </body>
 
 </html>

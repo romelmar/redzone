@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Addon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class AddonController extends Controller
 {
@@ -27,12 +28,15 @@ class AddonController extends Controller
      */
     public function store(Request $request)
     {
+        Log::info($request->all());
         $data = $request->validate([
             'subscription_id' => 'required|exists:subscriptions,id',
             'name'            => 'required|string|max:255',
             'amount'          => 'required|numeric|min:0',
             'bill_month'      => 'nullable|date',  // optional
+            'description'      => 'required|string|max:255',
         ]);
+        
 
         return Addon::create($data)->load('subscription.subscriber');
     }
