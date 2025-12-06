@@ -10,8 +10,25 @@ class Subscription extends Model
 {
     // protected $fillable = ['id','subscriber_id', 'plan_id', 'start_date', 'next_billing_date', 'status','balance'];
 
-    protected $fillable = ['subscriber_id', 'plan_id', 'start_date', 'end_date', 'monthly_discount', 'active'];
-    protected $casts = ['start_date' => 'date', 'end_date' => 'date', 'active' => 'bool'];
+    protected $fillable = [
+        'subscriber_id',
+        'plan_id',
+        'start_date',
+        'end_date',
+        'monthly_discount',
+        'active',
+        'deactivated_at',
+        'reactivated_days_passed',
+    ];
+
+protected $casts = [
+    'start_date' => 'date',
+    'end_date' => 'date',
+    'active' => 'boolean',
+    'deactivated_at' => 'datetime',
+];
+
+
 
     public function subscriber()
     {

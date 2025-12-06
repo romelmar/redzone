@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\ServiceCreditController;
 use App\Http\Controllers\Api\SOAController;
 use App\Http\Controllers\Api\SubscriberController;
 use App\Http\Controllers\Api\SubscriptionHistoryController;
+use App\Http\Controllers\Api\SubscriptionStatusController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Auth\RegisteredUserController;
 
@@ -52,3 +53,5 @@ Route::post('/subscriptions/{subscription}/send-soa', [BillingController::class,
 
 Route::get('/subscriptions/{subscription}/history', [SubscriptionHistoryController::class, 'index']);
 
+Route::post('/subscriptions/{subscription}/activate', [SubscriptionStatusController::class, 'activate']);
+Route::post('/subscriptions/{subscription}/deactivate', [SubscriptionStatusController::class, 'deactivate']);

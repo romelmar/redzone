@@ -8,6 +8,8 @@ import {
     createSubscription,
     updateSubscription,
     deleteSubscription,
+    activateSubscription,
+    deactivateSubscription
 } from "@/services/subscriptions"
 
 import { fetchSubscribers } from "@/services/subscribers"
@@ -270,6 +272,52 @@ const openHistory = async (s) => {
     }
 }
 
+
+// ─────────────────────────────────────────────
+// ACTIVATION / DEACTIVATION ENDPOINTS
+// ─────────────────────────────────────────────
+const activate = async (s) => {
+    try {
+        await activateSubscription(s.id);
+        load(); // reload table
+    } catch (err) {
+        console.error(err);
+        alert(err.response?.data?.message || "Activation failed.");
+    }
+}
+
+const deactivate = async (s) => {
+    try {
+        await deactivateSubscription(s.id);
+        load();
+    } catch (err) {
+        console.error(err);
+        alert(err.response?.data?.message || "Deactivation failed.");
+    }
+}
+
+const bulkActivate = async () => {
+    if (!selectedIds.value.length) return;
+    if (!confirm(`Activate ${selectedIds.value.length} subscription(s)?`)) return;
+
+    await Promise.all(
+        selectedIds.value.map(id => activateSubscription(id))
+    );
+    load();
+};
+
+const bulkDeactivate = async () => {
+    if (!selectedIds.value.length) return;
+    if (!confirm(`Deactivate ${selectedIds.value.length} subscription(s)?`)) return;
+
+    await Promise.all(
+        selectedIds.value.map(id => deactivateSubscription(id))
+    );
+    load();
+};
+
+
+
 onMounted(async () => {
     await Promise.all([loadDropdowns(), load()])
 })
@@ -303,13 +351,13 @@ onMounted(async () => {
                 <strong>{{ selectedIds.length }}</strong> selected
             </div>
             <div class="d-flex gap-2 mb-2">
-                <VBtn size="small" color="success" variant="tonal" @click="bulkUpdateStatus('active')">
+                <VBtn size="small" color="success" variant="tonal" @click="bulkActivate">
                     Activate
                 </VBtn>
                 <VBtn size="small" color="warning" variant="tonal" @click="bulkUpdateStatus('suspended')">
                     Suspend
                 </VBtn>
-                <VBtn size="small" color="secondary" variant="tonal" @click="bulkUpdateStatus('inactive')">
+                <VBtn size="small" color="secondary" variant="tonal" @click="bulkDeactivate">
                     Deactivate
                 </VBtn>
                 <VBtn size="small" color="error" variant="outlined" @click="bulkDelete">
@@ -431,19 +479,28 @@ onMounted(async () => {
                                     <VListItem @click="openEdit(s)">
                                         <VListItemTitle>Edit</VListItemTitle>
                                     </VListItem>
-                                    <VListItem @click="updateStatus(s, 'active')">
-                                        <VListItemTitle>Set Active</VListItemTitle>
+
+                                    <VListItem v-if="!s.active" @click="activate(s)">
+                                        <VListItemTitle class="text-success">Activate</VListItemTitle>
                                     </VListItem>
-                                    <VListItem @click="updateStatus(s, 'suspended')">
-                                        <VListItemTitle>Suspend</VListItemTitle>
+
+                                    <VListItem v-if="s.active" @click="deactivate(s)">
+                                        <VListItemTitle class="text-secondary">Deactivate</VListItemTitle>
                                     </VListItem>
-                                    <VListItem @click="updateStatus(s, 'inactive')">
-                                        <VListItemTitle>Deactivate</VListItemTitle>
+
+                                    <VListItem @click="openBillingPreview(s)">
+                                        <VListItemTitle>Billing Preview</VListItemTitle>
                                     </VListItem>
+
+                                    <VListItem @click="openHistory(s)">
+                                        <VListItemTitle>History</VListItemTitle>
+                                    </VListItem>
+
                                     <VListItem @click="remove(s)">
                                         <VListItemTitle class="text-error">Delete</VListItemTitle>
                                     </VListItem>
                                 </VList>
+
                             </VMenu>
                         </td>
                     </tr>

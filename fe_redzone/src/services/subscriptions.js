@@ -15,3 +15,11 @@ export function deleteSubscription(id) {
 export function showSubscription(id) {
   return api.get(`/api/subscriptions/${id}`)
 }
+
+export function activateSubscription(id) {
+  return api.post(`/api/subscriptions/${id}/activate`);
+}
+
+export function deactivateSubscription(id) {
+  return api.post(`/api/subscriptions/${id}/deactivate`);
+}
