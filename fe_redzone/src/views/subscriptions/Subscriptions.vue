@@ -26,12 +26,13 @@ const dialog = ref(false)
 const subscriptions = ref([])
 
 const page = ref(1)
-const perPage = ref(20)
+const perPage = ref(10)
 const totalItems = ref(0)
 
 // filters & search
 const search = ref("")
-const activeFilter = ref("")      // '', 'active', 'suspended', 'inactive'
+const activeFilter = ref(null)
+   // '', 'active', 'suspended', 'inactive'
 const planFilter = ref(null)      // plan_id
 
 // sorting
@@ -69,11 +70,12 @@ const form = ref({
 // HELPERS
 // ─────────────────────────────────────────────
 const statusOptions = [
-    { label: "All", value: "" },
+    { label: "All", value: null },
     { label: "Active", value: "active" },
     { label: "Suspended", value: "suspended" },
     { label: "Inactive", value: "inactive" },
 ]
+
 
 const statusColor = (status) => {
     switch (status) {
@@ -132,6 +134,7 @@ const load = async () => {
         sort_by: sortBy.value,
         sort_dir: sortDir.value,
     })
+
 
     subscriptions.value = data.data ?? data.data
     totalItems.value = data.total ?? 0

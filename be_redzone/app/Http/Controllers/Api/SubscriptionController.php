@@ -13,110 +13,56 @@ class SubscriptionController extends Controller
     /**
      * List all subscriptions
      */
-public function index(Request $request, BillingService $billing)
+public function index(Request $request)
 {
-    $page      = $request->get('page', 1);
-    $perPage   = $request->get('per_page', 20);
-    $search    = $request->get('search');
-    $active    = $request->get('active'); // "1", "0" or null
-    $planId    = $request->get('plan_id');
-    $sortBy    = $request->get('sort_by', 'start_date');
-    $sortDir   = $request->get('sort_dir', 'desc');
+    Log::info('Fetching subscriptions with filters', $request->all());
+    $query = Subscription::with(['subscriber', 'plan'])
+        ->select('subscriptions.*')
+        ->join('subscribers', 'subscribers.id', '=', 'subscriptions.subscriber_id')
+        ->join('plans', 'plans.id', '=', 'subscriptions.plan_id');
 
-    // Only allow these columns to be sorted
-    $allowedSort = [
-        'subscriber_name',
-        'plan_name',
-        'start_date',
-        'monthly_discount',
-        'current_balance',
-        'active',
-    ];
-
-    if (!in_array($sortBy, $allowedSort)) {
-        $sortBy = 'start_date';
-    }
-
-    // Map frontend sort keys → DB columns
-    $sortColumnMap = [
-        'subscriber_name'   => 'subscribers.name',
-        'plan_name'         => 'plans.name',
-        'start_date'        => 'subscriptions.start_date',
-        'monthly_discount'  => 'subscriptions.monthly_discount',
-        'active'            => 'subscriptions.active',
-        'current_balance'   => 'subscriptions.id', // sort later in memory
-    ];
-
-    $query = Subscription::query()
-        ->with(['subscriber', 'plan'])
-        ->leftJoin('subscribers', 'subscribers.id', '=', 'subscriptions.subscriber_id')
-        ->leftJoin('plans', 'plans.id', '=', 'subscriptions.plan_id')
-        ->select('subscriptions.*');
-
-    // ─────────────────────────────────────────────
-    // SEARCH
-    // ─────────────────────────────────────────────
-    if ($search) {
+    // Search filter
+    if ($search = $request->search) {
         $query->where(function ($q) use ($search) {
-            $q->where('subscribers.name', 'LIKE', "%{$search}%")
-              ->orWhere('plans.name', 'LIKE', "%{$search}%");
+            $q->where('subscribers.name', 'like', "%$search%")
+              ->orWhere('plans.name', 'like', "%$search%")
+              ->orWhere('subscriptions.start_date', 'like', "%$search%");
         });
     }
 
-    // ─────────────────────────────────────────────
-    // ACTIVE FILTER (boolean)
-    // ─────────────────────────────────────────────
-    if ($active !== null && $active !== '') {
-        $query->where('subscriptions.active', (int)$active);
+    // Status filter (active / inactive / suspended)
+if ($request->has('status') && $request->status !== null && $request->status !== '') {
+
+
+        if ($request->status === 'active') {
+            $query->where('subscriptions.active', true);
+
+        } elseif ($request->status === 'inactive') {
+            $query->where('subscriptions.active', false);
+
+        } elseif ($request->status === 'suspended') {
+            // If you implement suspended later:
+            $query->where('subscriptions.status', 'suspended');
+        }
     }
 
-    // ─────────────────────────────────────────────
-    // PLAN FILTER
-    // ─────────────────────────────────────────────
-    if ($planId) {
-        $query->where('subscriptions.plan_id', $planId);
+    // Plan filter
+    if ($request->filled('plan_id')) {
+        $query->where('subscriptions.plan_id', $request->plan_id);
     }
 
-    // ─────────────────────────────────────────────
-    // SORTING
-    // ─────────────────────────────────────────────
-    if ($sortBy === 'current_balance') {
-        // sort later manually
-        $query->orderBy('subscriptions.start_date', $sortDir);
-    } else {
-        $query->orderBy($sortColumnMap[$sortBy], $sortDir);
-    }
+    // Sorting
+    $sortBy = $request->get('sort_by', 'subscriptions.start_date');
+    $sortDir = $request->get('sort_dir', 'desc');
 
-    // ─────────────────────────────────────────────
-    // PAGINATION
-    // ─────────────────────────────────────────────
-    $paginator = $query->paginate($perPage);
+    $query->orderBy($sortBy, $sortDir);
 
-    // ─────────────────────────────────────────────
-    // ADD current_balance FOR EACH SUBSCRIPTION
-    // ─────────────────────────────────────────────
-    $paginator->getCollection()->transform(function ($sub) use ($billing) {
+    // Pagination
+    $perPage = $request->get('per_page', 20);
 
-        $calc = $billing->computeFor($sub, now()->startOfMonth());
-
-        // You can change to previous_balance or total_due as preferred
-        $sub->current_balance = $calc['total_due'];
-
-        return $sub;
-    });
-
-    // Sort by computed balance if needed
-    if ($sortBy === 'current_balance') {
-        $sorted = $paginator->getCollection()->sortBy(
-            'current_balance',
-            SORT_REGULAR,
-            $sortDir === 'desc'
-        )->values();
-
-        $paginator->setCollection($sorted);
-    }
-
-    return response()->json($paginator);
+    return response()->json(
+        $query->paginate($perPage)
+    );
 }
 
 
