@@ -52,7 +52,7 @@ const handleNavScroll = evt => {
         <RouterLink to="/"  >
 
           <div class="center-container">
-            <img :src="logo" alt="Logo" height="120" />
+            <img :src="logo" alt="Logo" height="60" />
           </div>
         </RouterLink>
       </slot>

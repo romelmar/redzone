@@ -202,7 +202,7 @@ onMounted(load);
                 </thead>
 
                 <tbody>
-                    <tr v-for="s in subscribers" :key="s.id">
+                    <tr v-for="(s, i) in subscribers" :key="s.id" :class="i % 2 === 0 ? 'row-alt' : ''">
                         <td>{{ s.name }}</td>
                         <td>{{ s.email }}</td>
                         <td>{{ s.phone }}</td>
@@ -228,36 +228,22 @@ onMounted(load);
             </VTable>
 
             <!-- Pagination -->
-<div class="d-flex flex-column flex-sm-row align-center justify-space-between px-4 py-3 gap-3">
+            <div class="d-flex flex-column flex-sm-row align-center justify-space-between px-4 py-3 gap-3">
 
-  <!-- Pagination -->
-  <VPagination
-    v-model="page"
-    :length="Math.ceil(totalItems / perPage)"
-    @update:modelValue="load"
-    rounded="lg"
-    variant="flat"
-    color="primary"
-    class="pagination-sneat"
-  />
+                <!-- Pagination -->
+                <VPagination v-model="page" :length="Math.ceil(totalItems / perPage)" @update:modelValue="load"
+                    rounded="lg" variant="flat" color="primary" class="pagination-sneat" />
 
-  <!-- Rows per page -->
-  <div class="d-flex align-center">
-    <span class="me-2 text-body-2">Rows per page:</span>
+                <!-- Rows per page -->
+                <div class="d-flex align-center">
+                    <span class="me-2 text-body-2">Rows per page:</span>
 
-    <VSelect
-      v-model="perPage"
-      :items="[10, 20, 50, 100]"
-      density="comfortable"
-      variant="outlined"
-      hide-details
-      class="sneat-rows-select"
-      style="max-width: 110px"
-      @update:modelValue="() => { page = 1; load() }"
-    />
-  </div>
+                    <VSelect v-model="perPage" :items="[10, 20, 50, 100]" density="comfortable" variant="outlined"
+                        hide-details class="sneat-rows-select" style="max-width: 110px"
+                        @update:modelValue="() => { page = 1; load() }" />
+                </div>
 
-</div>
+            </div>
 
 
         </div>
@@ -300,3 +286,16 @@ onMounted(load);
         </VCard>
     </VDialog>
 </template>
+<style scoped>
+.row-alt {
+    background-color: rgba(0, 0, 0, 0.03); /* light gray tint */
+}
+
+.row-alt:hover {
+    background-color: rgba(0, 0, 0, 0.08) !important; /* stronger hover highlight */
+}
+
+tbody tr:hover {
+    background-color: rgba(0, 0, 0, 0.06) !important;
+}
+</style>

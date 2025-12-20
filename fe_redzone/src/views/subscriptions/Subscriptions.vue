@@ -426,7 +426,7 @@ onMounted(async () => {
                 </thead>
 
                 <tbody>
-                    <tr v-for="s in subscriptions" :key="s.id">
+                    <tr v-for="(s, i) in subscriptions" :key="s.id" :class="i % 2 === 0 ? 'row-alt' : ''"> 
                         <td>
                             <VCheckbox :model-value="selectedIds.includes(s.id)" @update:model-value="checked => {
                                 if (checked) selectedIds.push(s.id)
@@ -708,4 +708,17 @@ onMounted(async () => {
 .sneat-rows-select .v-field {
     border-radius: 8px !important;
 }
+
+.row-alt {
+    background-color: rgba(0, 0, 0, 0.03); /* light gray tint */
+}
+
+.row-alt:hover {
+    background-color: rgba(0, 0, 0, 0.08) !important; /* stronger hover highlight */
+}
+
+tbody tr:hover {
+    background-color: rgba(0, 0, 0, 0.06) !important;
+}
+
 </style>

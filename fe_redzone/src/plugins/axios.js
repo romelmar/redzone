@@ -1,8 +1,8 @@
 import axios from 'axios'
 
 const api = axios.create({
-  baseURL: 'http://localhost:8000',
-  withCredentials: true,
+  baseURL: 'https://api.rosnel-partnership.com',
+  withCredentials: false, // 🔥 forces no credentials
 })
 
 export default api

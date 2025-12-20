@@ -16,6 +16,7 @@ import { useAuthStore } from '@/stores/auth'
 import { useToastStore } from '@/stores/toast'
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
+import logo from '@images/logo.png'
 
 const email = ref('')
 const password = ref('')
@@ -40,24 +41,11 @@ const handleLogin = async () => {
 <template>
   <div class="auth-wrapper d-flex align-center justify-center pa-4">
     <VCard class="auth-card pa-4 pt-7" max-width="448">
-      <VCardItem class="justify-center">
-        <template #prepend>
-          <div class="d-flex">
-            <div class="d-flex text-primary" v-html="logo" />
-          </div>
-        </template>
-
-        <VCardTitle class="text-2xl font-weight-bold">
-          sneat
-        </VCardTitle>
-      </VCardItem>
 
       <VCardText class="pt-2">
-        <h5 class="text-h5 mb-1">
-          Welcome to sneat! 👋🏻
-        </h5>
+
         <p class="mb-0">
-          Please sign-in to your account and start the adventure
+          <img :src="logo" alt="Logo" height="60" />
         </p>
       </VCardText>
 
