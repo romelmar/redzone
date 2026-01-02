@@ -44,14 +44,24 @@ Route::get('/dues', [BillingController::class, 'subscribersWithDues']);
 // Route::get('/subscriptions/{subscription}/soa-json', [BillingController::class, 'soaJson']);
 // Route::get('/subscriptions/{subscription}/soa', [BillingController::class, 'soaPdf']);
 // Route::post('/subscriptions/{subscription}/send-soa', [BillingController::class, 'sendSoa']);
-Route::get('/subscriptions/{subscription}/soa', [SOAController::class, 'download'])->name('subscriptions.soa.download');
-Route::post('/subscriptions/{subscription}/soa/email', [SOAController::class, 'email'])->name('subscriptions.soa.email');
+// Route::get('/subscriptions/{subscription}/soa', [SOAController::class, 'download'])->name('subscriptions.soa.download');
+// Route::post('/subscriptions/{subscription}/soa/email', [SOAController::class, 'email'])->name('subscriptions.soa.email');
 
-Route::get('/subscriptions/{subscription}/soa-json', [BillingController::class, 'soaJson']);
-Route::get('/subscriptions/{subscription}/soa',      [BillingController::class, 'soaPdf']);
-Route::post('/subscriptions/{subscription}/send-soa', [BillingController::class, 'sendSoa']);
+// Route::get('/subscriptions/{subscription}/soa-json', [BillingController::class, 'soaJson']);
+// Route::get('/subscriptions/{subscription}/soa',      [BillingController::class, 'soaPdf']);
+// Route::post('/subscriptions/{subscription}/send-soa', [BillingController::class, 'sendSoa']);
 
-Route::get('/subscriptions/{subscription}/history', [SubscriptionHistoryController::class, 'index']);
+// Route::get('/subscriptions/{subscription}/history', [SubscriptionHistoryController::class, 'index']);
 
-Route::post('/subscriptions/{subscription}/activate', [SubscriptionStatusController::class, 'activate']);
-Route::post('/subscriptions/{subscription}/deactivate', [SubscriptionStatusController::class, 'deactivate']);
+// Route::post('/subscriptions/{subscription}/activate', [SubscriptionStatusController::class, 'activate']);
+// Route::post('/subscriptions/{subscription}/deactivate', [SubscriptionStatusController::class, 'deactivate']);
+
+
+
+Route::prefix('subscriptions')->group(function () {
+    Route::post('{subscription}/activate', [SubscriptionController::class, 'activate']);
+    Route::post('{subscription}/deactivate', [SubscriptionController::class, 'deactivate']);
+    Route::post('{subscription}/suspend', [SubscriptionController::class, 'suspend']);
+
+    Route::get('{subscription}/history', [SubscriptionController::class, 'history']);
+});

@@ -6,17 +6,39 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration {
-  public function up(): void {
-    Schema::create('subscriptions', function (Blueprint $t) {
-      $t->id();
-      $t->foreignId('subscriber_id')->constrained()->cascadeOnDelete();
-      $t->foreignId('plan_id')->constrained()->cascadeOnDelete();
-      $t->date('start_date');
-      $t->date('end_date')->nullable();
-      $t->decimal('monthly_discount', 10, 2)->default(0); // per-subscriber monthly discount
-      $t->boolean('active')->default(true);
-      $t->timestamps();
-    });
-  }
-  public function down(): void { Schema::dropIfExists('subscriptions'); }
+    public function up(): void
+    {
+        Schema::create('subscriptions', function (Blueprint $table) {
+            $table->id();
+
+            $table->foreignId('subscriber_id')
+                ->constrained()
+                ->cascadeOnDelete();
+
+            $table->foreignId('plan_id')
+                ->constrained()
+                ->cascadeOnDelete();
+
+            $table->date('start_date');
+            $table->date('end_date')->nullable();
+
+            $table->decimal('monthly_discount', 10, 2)->default(0);
+
+            // STATUS HANDLING
+            $table->boolean('active')->default(true);
+            $table->timestamp('deactivated_at')->nullable();
+            $table->integer('reactivated_days_passed')->default(0);
+
+            $table->timestamps();
+
+            $table->index(['subscriber_id', 'plan_id']);
+            $table->index('active');
+        });
+    }
+
+    public function down(): void
+    {
+        Schema::dropIfExists('subscriptions');
+    }
 };
+

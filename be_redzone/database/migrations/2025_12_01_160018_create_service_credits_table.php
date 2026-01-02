@@ -6,15 +6,28 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration {
-  public function up(): void {
-    Schema::create('service_credits', function (Blueprint $t) {
-      $t->id();
-      $t->foreignId('subscription_id')->constrained()->cascadeOnDelete();
-      $t->date('bill_month'); // 1st day of month credited
-      $t->unsignedInteger('outage_days')->default(0); // number of days to deduct
-      $t->text('reason')->nullable();
-      $t->timestamps();
-    });
-  }
-  public function down(): void { Schema::dropIfExists('service_credits'); }
+    public function up(): void
+    {
+        Schema::create('service_credits', function (Blueprint $table) {
+            $table->id();
+
+            $table->foreignId('subscription_id')
+                ->constrained()
+                ->cascadeOnDelete();
+
+            $table->integer('days');
+            $table->decimal('amount', 10, 2);
+            $table->date('credit_month'); // YYYY-MM-01
+            $table->text('reason')->nullable();
+
+            $table->timestamps();
+
+            $table->index(['subscription_id', 'credit_month']);
+        });
+    }
+
+    public function down(): void
+    {
+        Schema::dropIfExists('service_credits');
+    }
 };
