@@ -20,9 +20,17 @@
             margin-bottom: 5px;
         }
 
+        td>p {
+            margin: 5px 0 0;
+        }
+
+        td>p.small {
+            font-size: 10px;
+        }
+
         .header-table td {
             vertical-align: middle;
-            padding: 10px 20px;
+            padding: 0 20px 10px;
         }
 
         .header-left {
@@ -44,11 +52,20 @@
 
 
         .bill-header {
-            background: #a02017;
+            /* Fallback for older browsers */
+            /* background-color: #a02017; */
+            /* Standard radial gradient starting as #a02017 in the center and expanding to black */
+            background: #A02017;
+            background: linear-gradient(90deg, rgba(160, 32, 23, 1) 0%, rgba(95, 19, 14, 1) 70%, rgba(77, 15, 11, 1) 85%, rgba(0, 0, 0, 1) 100%);
+
             color: #fff;
             padding: 6px 12px;
             font-size: 11px;
             margin: 0;
+        }
+
+        .bill-header table td {
+            padding: 0 30px;
         }
 
         .account-info,
@@ -175,9 +192,21 @@
 
 
     {{-- Red Bar --}}
-    <p class="bill-header">
-        BIR Permit No. 123-456-789 | TIN: 000-000-000 | SOA No: {{ $subscription->id }}
-    </p>
+    <div class="bill-header">
+        <table width="100%">
+            <tr>
+                <td>
+                    <p>BIR TBCP No. 11-074-06-13-R0711</p>
+                    <p class="small">NTC VAS CERT No. RB-VAS-2022-078/NEW</p>
+                </td>
+                <td> 
+                    <p> TIN: 156-539-786-00000 / </p>
+                    <p>      156-539-786-00001 </p>
+                   </td>
+                <td>SOA No: {{ $subscription->id }}</td>
+            </tr>
+        </table>
+    </div>
 
     {{-- Account & SOA Info --}}
     <div class="account-info">
@@ -297,18 +326,19 @@
         </table>
 
 
-    {{-- Notice --}}
-    <div class="notice">
-        <strong>NOTICE:</strong> For inquiries, please contact our support hotline or send us a message on our Facebook
-        page.
-    </div>
+        {{-- Notice --}}
+        <div class="notice">
+            <strong>NOTICE:</strong> For inquiries, please contact our support hotline or send us a message on our
+            Facebook
+            page.
+        </div>
 
-    {{-- Terms --}}
-    <div class="terms">
-        <p><strong>Terms and Conditions</strong></p>
-        <p>Please send payment within 5 days upon receiving this invoice to avoid inconvenience.</p>
-        <p>Thank You.</p>
-    </div>
+        {{-- Terms --}}
+        <div class="terms">
+            <p><strong>Terms and Conditions</strong></p>
+            <p>Please send payment within 5 days upon receiving this invoice to avoid inconvenience.</p>
+            <p>Thank You.</p>
+        </div>
     </div>
 </body>
 

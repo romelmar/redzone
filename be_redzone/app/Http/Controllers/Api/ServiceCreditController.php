@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\ServiceCredit;
+use App\Models\Subscription;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 
 class ServiceCreditController extends Controller
@@ -23,12 +25,30 @@ class ServiceCreditController extends Controller
     {
         $data = $request->validate([
             'subscription_id' => 'required|exists:subscriptions,id',
-            'bill_month'      => 'required|date',
-            'outage_days'     => 'required|integer|min:0',
+            'credit_month'    => 'required|date',
+            'outage_days'            => 'required|integer|min:1',
             'reason'          => 'nullable|string',
         ]);
 
-        return ServiceCredit::create($data);
+        $subscription = Subscription::with('plan')->findOrFail($data['subscription_id']);
+
+        $month = Carbon::parse($data['credit_month'])->startOfMonth();
+        $daysInMonth = $month->daysInMonth;
+
+        $amount = round(
+            ($subscription->plan->price / $daysInMonth) * $data['outage_days'],
+            2
+        );
+
+        $credit = ServiceCredit::create([
+            'subscription_id' => $subscription->id,
+            'credit_month'    => $month,
+            'outage_days'            => $data['outage_days'],
+            'amount'          => $amount,
+            'reason'          => $data['reason'] ?? null,
+        ]);
+
+        return response()->json($credit, 201);
     }
 
     public function show(ServiceCredit $serviceCredit)
@@ -39,7 +59,7 @@ class ServiceCreditController extends Controller
     public function update(Request $request, ServiceCredit $serviceCredit)
     {
         $data = $request->validate([
-            'bill_month'  => 'sometimes|date',
+            'credit_month'  => 'sometimes|date',
             'outage_days' => 'sometimes|integer|min:0',
             'reason'      => 'nullable|string',
         ]);

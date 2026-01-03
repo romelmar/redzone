@@ -16,7 +16,7 @@ class PaymentController extends Controller
             $query->where('subscription_id', $request->subscription_id);
         }
 
-        return $query->latest('paid_at')->paginate(20);
+        return $query->latest('payment_date')->paginate(20);
     }
 
     public function store(Request $request)
@@ -24,9 +24,8 @@ class PaymentController extends Controller
         $data = $request->validate([
             'subscription_id' => 'required|exists:subscriptions,id',
             'amount'          => 'required|numeric|min:0.01',
-            'paid_at'         => 'required|date',
-            'reference'       => 'nullable|string|max:255',
-            'notes'           => 'nullable|string',
+            'payment_date'         => 'required|date',
+            'remarks'           => 'nullable|string',
         ]);
 
         return Payment::create($data);
@@ -41,9 +40,8 @@ class PaymentController extends Controller
     {
         $data = $request->validate([
             'amount'    => 'sometimes|numeric|min:0.01',
-            'paid_at'   => 'sometimes|date',
-            'reference' => 'nullable|string|max:255',
-            'notes'     => 'nullable|string',
+            'payment_date'   => 'sometimes|date',
+            'remarks'     => 'nullable|string',
         ]);
 
         $payment->update($data);

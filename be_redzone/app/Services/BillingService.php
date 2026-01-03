@@ -15,53 +15,82 @@ class BillingService
    * - total_due
    * - due_date (Carbon)
    */
-  public function computeFor(Subscription $sub, Carbon $billMonth): array
-  {
-    // Bill month is first day of month (e.g., 2025-11-01)
-    $planPrice = $sub->plan->price;
-    $discount  = $sub->monthly_discount;
+public function computeFor(Subscription $sub, Carbon $billMonth): array
+{
+    $billMonth = $billMonth->copy()->startOfMonth();
 
-    // Add-ons for that month
-    $addonsTotal = $sub->addons()->whereDate('bill_month', $billMonth)->sum('amount');
+    // ── Base values ───────────────────────────
+    $planPrice = (float) ($sub->plan?->price ?? 0);
+    $discount  = (float) ($sub->monthly_discount ?? 0);
 
-    // Outage credits (prorated by month length)
-    $outageDays  = (int) $sub->serviceCredits()
-      ->whereDate('bill_month', $billMonth)->sum('outage_days');
+    // ── Add-ons (month-based) ─────────────────
+    $addonsTotal = (float) $sub->addons()
+        ->whereDate('credit_month', $billMonth)
+        ->sum('amount');
 
-    $daysInMonth = $billMonth->daysInMonth;
-    $outageCredit = round(($planPrice / $daysInMonth) * $outageDays, 2);
+    // ── Service credits (ALL months ≤ bill month) ──
+    $creditDays = (int) $sub->serviceCredits()
+        ->whereDate('credit_month', '<=', $billMonth)
+        ->sum('outage_days');
 
-    $msf = $planPrice;
+    $daysInMonth  = $billMonth->daysInMonth;
+    $creditAmount = round(($planPrice / $daysInMonth) * $creditDays, 2);
 
-    $currentBill = max(0, $msf - $discount + $addonsTotal - $outageCredit);
+    // ── Current bill ──────────────────────────
+    $currentBill = max(
+        0,
+        $planPrice - $discount + $addonsTotal
+    );
 
-    // Previous balance = (all charges before this month) - (all payments before this month)
-    $prevCharges = $this->lifetimeChargesUntil($sub, $billMonth->copy()->startOfMonth());
-    $prevPayments = $sub->payments()->whereDate('paid_at', '<', $billMonth)->sum('amount');
+    // ── Charges BEFORE this month ─────────────
+    $prevCharges = (float) $this->lifetimeChargesUntil($sub, $billMonth);
+
+    // ── Payments BEFORE this month ────────────
+    $prevPayments = (float) $sub->payments()
+        ->whereDate('payment_date', '<', $billMonth)
+        ->sum('amount');
+
+    // ── Previous balance ──────────────────────
     $previousBalance = round($prevCharges - $prevPayments, 2);
 
-    $totalAmountDue = round($previousBalance + $currentBill, 2);
+    // ── Payments THIS month ───────────────────
+    $paymentsThisMonth = (float) $sub->payments()
+        ->whereBetween('payment_date', [
+            $billMonth,
+            $billMonth->copy()->endOfMonth(),
+        ])
+        ->sum('amount');
 
-    $end   = $billMonth->copy()->endOfMonth();
-    $paymentsTotal = (float) $sub->payments()
-      ->whereDate('paid_at', '<=', $end)
-      ->sum('amount');
-
-    $total_due_current = max(0, ($previousBalance + $currentBill) - $paymentsTotal);
+    // ── FINAL TOTAL DUE ───────────────────────
+    $totalDue = max(
+        0,
+        round(
+            ($previousBalance + $currentBill)
+            - $paymentsThisMonth
+            - $creditAmount,
+            2
+        )
+    );
 
     return [
-      'previous_balance' => $previousBalance,
-      'msf' => $msf,
-      'discount' => $discount,
-      'addons_total' => $addonsTotal,
-      'outage_days' => $outageDays,
-      'outage_credit' => $outageCredit,
-      'current_bill' => $currentBill,
-      'total_due' => $totalAmountDue,
-      // 'total_due' => $total_due_current,
-      'due_date' => $sub->dueDateForMonth($billMonth),
+        'previous_balance' => $previousBalance,
+        'msf'              => $planPrice,
+        'discount'         => $discount,
+
+        'addons_total'     => $addonsTotal,
+        'credit_days'      => $creditDays,
+        'outage_credit'    => $creditAmount,
+
+        'payments_total'   => $paymentsThisMonth,
+
+        'current_bill'     => $currentBill,
+        'total_due'        => $totalDue,
+
+        'due_date'         => $sub->dueDateForMonth($billMonth),
     ];
-  }
+}
+
+
 
   // Sum of all monthly “MSF - discount + addons - outageCredit” up to but not including $untilMonth
   protected function lifetimeChargesUntil(Subscription $sub, Carbon $untilMonth): float
@@ -76,8 +105,8 @@ class BillingService
     while ($cursor->lessThanOrEqualTo($end)) {
       $plan = $sub->plan->price;
       $discount = $sub->monthly_discount;
-      $addons = $sub->addons()->whereDate('bill_month', $cursor)->sum('amount');
-      $outageDays = (int)$sub->serviceCredits()->whereDate('bill_month', $cursor)->sum('outage_days');
+      $addons = $sub->addons()->whereDate('credit_month', $cursor)->sum('amount');
+      $outageDays = (int)$sub->serviceCredits()->whereDate('credit_month', $cursor)->sum('outage_days');
       $outageCredit = round(($plan / $cursor->daysInMonth) * $outageDays, 2);
 
       $sum += max(0, $plan - $discount + $addons - $outageCredit);
