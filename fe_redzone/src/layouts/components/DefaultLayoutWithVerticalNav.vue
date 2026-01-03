@@ -57,7 +57,7 @@ const vuetifyTheme = useTheme()
         exact: false, // stays active for /subscribers/* too
       }" />
       <VerticalNavLink :item="{
-        title: 'Subscribtions',
+        title: 'Subscriptions',
         icon: 'bx-file',
         to: '/subscriptions',
         exact: false, // stays active for /subscribers/* too

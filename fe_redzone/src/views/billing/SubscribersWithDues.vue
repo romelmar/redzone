@@ -72,7 +72,7 @@ onMounted(load)
             <td>{{ d.subscriber }}</td>
             <td>{{ d.plan }}</td>
             <td>{{ d.billing_period }}</td>
-            <td>₱{{ d.base_amount.toFixed(2) }}</td>
+            <td>₱{{ d.monthly_fee.toFixed(2) }}</td>
             <td>₱{{ d.addons_amount.toFixed(2) }}</td>
             <td>-₱{{ d.credits_amount.toFixed(2) }}</td>
             <td><strong>₱{{ d.total_due.toFixed(2) }}</strong></td>

@@ -17,7 +17,7 @@ const subscriptions = ref([])
 const form = ref({
     id: null,
     subscription_id: null,
-    bill_month: '',
+    credit_month: '',
     outage_days: 0,
     reason: '',
 })
@@ -37,7 +37,7 @@ const openCreate = () => {
     form.value = {
         id: null,
         subscription_id: null,
-        bill_month: new Date().toISOString().slice(0, 10).replace(/\d{2}$/, '01'),
+        credit_month: new Date().toISOString().slice(0, 10).replace(/\d{2}$/, '01'),
         outage_days: 0,
         reason: '',
     }
@@ -97,7 +97,7 @@ onMounted(load)
                 <tbody>
                     <tr v-for="c in credits" :key="c.id">
                         <td>{{ subscriptionLabel(c) }}</td>
-                        <td>{{ c.bill_month }}</td>
+                        <td>{{ c.credit_month }}</td>
                         <td>{{ c.outage_days }}</td>
                         <td>{{ c.reason }}</td>
                         <td class="text-end">
@@ -123,7 +123,7 @@ onMounted(load)
                             item-value="id" label="Subscription" />
                     </VCol>
                     <VCol cols="12" md="6">
-                        <VTextField label="Bill Month" type="date" v-model="form.bill_month" />
+                        <VTextField label="Bill Month" type="date" v-model="form.credit_month" />
                     </VCol>
                     <VCol cols="12" md="6">
                         <VTextField label="Outage Days" type="number" v-model.number="form.outage_days" min="0" />

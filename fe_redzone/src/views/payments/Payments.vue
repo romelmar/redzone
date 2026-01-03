@@ -19,9 +19,9 @@ const form = ref({
     id: null,
     subscription_id: null,
     amount: null,
-    paid_at: '',
-    reference: '',
-    notes: '',
+    payment_date: '',
+    payment_type: '',
+    remarks: '',
 })
 
 const load = async () => {
@@ -40,9 +40,9 @@ const openCreate = () => {
         id: null,
         subscription_id: null,
         amount: null,
-        paid_at: new Date().toISOString().slice(0, 10),
-        reference: '',
-        notes: '',
+        payment_date: new Date().toISOString().slice(0, 10),
+        payment_type: '',
+        remarks: '',
     }
     dialog.value = true
 }
@@ -92,8 +92,8 @@ onMounted(load)
                         <th>Subscription</th>
                         <th>Amount</th>
                         <th>Paid At</th>
-                        <th>Reference</th>
-                        <th>Notes</th>
+                        <th>Payment type</th>
+                        <th>remarks</th>
                         <th class="text-end">Actions</th>
                     </tr>
                 </thead>
@@ -101,9 +101,9 @@ onMounted(load)
                     <tr v-for="p in payments" :key="p.id">
                         <td>{{ subscriptionLabel(p) }}</td>
                         <td>₱{{ Number(p.amount).toFixed(2) }}</td>
-                        <td>{{ formatIsoToReadable(p.paid_at) }}</td>
-                        <td>{{ p.reference }}</td>
-                        <td>{{ p.notes }}</td>
+                        <td>{{ formatIsoToReadable(p.payment_date) }}</td>
+                        <td>{{ p.payment_type }}</td>
+                        <td>{{ p.remarks }}</td>
                         <td class="text-end">
                             <VBtn size="small" variant="outlined" class="me-1" @click="openEdit(p)">Edit</VBtn>
                             <VBtn size="small" color="error" variant="outlined" @click="remove(p)">Delete</VBtn>
@@ -130,13 +130,13 @@ onMounted(load)
                         <VTextField label="Amount" type="number" v-model.number="form.amount" />
                     </VCol>
                     <VCol cols="12" md="6">
-                        <VTextField label="Paid At" type="date" v-model="form.paid_at" />
+                        <VTextField label="Paid At" type="date" v-model="form.payment_date" />
                     </VCol>
                     <VCol cols="12" md="6">
-                        <VTextField label="Reference" v-model="form.reference" />
+                        <VTextField label="Payment Type" v-model="form.payment_type" />
                     </VCol>
                     <VCol cols="12" md="6">
-                        <VTextarea label="Notes" rows="2" v-model="form.notes" />
+                        <VTextarea label="Remarks" rows="2" v-model="form.remarks" />
                     </VCol>
                 </VRow>
             </VCardText>
