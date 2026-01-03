@@ -202,7 +202,7 @@
                 </td>
                 <td> 
                     <p> TIN: 156-539-786-00000 / </p>
-                    <p>      156-539-786-00001 </p>
+                    <p> &nbsp; &nbsp; &nbsp; &nbsp; 156-539-786-00001 </p>
                    </td>
                 <td>SOA No: {{ $subscription->id }}</td>
             </tr>
