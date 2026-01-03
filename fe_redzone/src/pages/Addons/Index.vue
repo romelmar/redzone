@@ -27,7 +27,7 @@ const form = ref({
   subscription_id: "",
   name: "",
   amount: "",
-  bill_month: "", // If needed
+  credit_month: "", // If needed
 });
 
 // -------------------- LOAD DATA ----------------------
@@ -56,7 +56,7 @@ const resetForm = () => {
     subscription_id: "",
     name: "",
     amount: "",
-    bill_month: "",
+    credit_month: "",
   };
   isEditing.value = false;
   dialog.value = false;
@@ -176,7 +176,7 @@ onMounted(async () => {
 
         <VTextField label="Amount" type="number" v-model="form.amount" outlined dense />
 
-        <VTextField v-if="form.bill_month !== undefined" label="Bill Month" type="date" v-model="form.bill_month"
+        <VTextField v-if="form.credit_month !== undefined" label="Bill Month" type="date" v-model="form.credit_month"
           outlined dense />
       </VCardText>
 

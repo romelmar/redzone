@@ -22,7 +22,7 @@ const form = ref({
     name: '',
     description: '',   // NEW FIELD
     amount: null,
-    bill_month: '',
+    credit_month: '',
 })
 
 const load = async () => {
@@ -43,7 +43,7 @@ const openCreate = () => {
         name: '',
         description: '',   // NEW FIELD
         amount: null,
-        bill_month: new Date().toISOString().slice(0, 10).replace(/\d{2}$/, '01'),
+        credit_month: new Date().toISOString().slice(0, 10).replace(/\d{2}$/, '01'),
     }
     dialog.value = true
 }
@@ -55,7 +55,7 @@ const openEdit = (a) => {
         name: a.name,
         description: '',   // NEW FIELD
         amount: a.amount,
-        bill_month: a.bill_month,
+        credit_month: a.credit_month,
     }
     dialog.value = true
 }
@@ -129,7 +129,7 @@ onMounted(load)
                         <td>{{ a.description }}</td>
 
                         <td>₱{{ Number(a.amount).toFixed(2) }}</td>
-                        <td>{{ formatIsoToReadable(a.bill_month) }}</td>
+                        <td>{{ formatIsoToReadable(a.credit_month) }}</td>
                         <td class="text-end">
                             <VBtn size="small" variant="outlined" class="me-1" @click="openEdit(a)">Edit</VBtn>
                             <VBtn size="small" color="error" variant="outlined" @click="remove(a)">Delete</VBtn>
@@ -186,7 +186,7 @@ onMounted(load)
                         <VTextField label="Amount" type="number" v-model.number="form.amount" />
                     </VCol>
                     <VCol cols="12" md="6">
-                        <VTextField label="Bill Month" type="date" v-model="form.bill_month" />
+                        <VTextField label="Bill Month" type="date" v-model="form.credit_month" />
                     </VCol>
                 </VRow>
             </VCardText>

@@ -86,6 +86,7 @@ watch(tableSearch, () => {
 const form = ref({
     id: null,
     name: "",
+    account_number: "",
     email: "",
     phone: "",
     address: "",
@@ -97,6 +98,7 @@ watch(dialog, isOpen => {
         form.value = {
             id: null,
             name: "",
+            account_number: "",
             email: "",
             phone: "",
             address: "",
@@ -123,6 +125,7 @@ const openCreate = () => {
     form.value = {
         id: null,
         name: "",
+        account_number: "",
         email: "",
         phone: "",
         address: "",
@@ -194,6 +197,7 @@ onMounted(load);
                 <thead>
                     <tr>
                         <th>Name</th>
+                        <th>Account Number</th>
                         <th>Email</th>
                         <th>Phone</th>
                         <th>Subscriptions</th>
@@ -204,6 +208,7 @@ onMounted(load);
                 <tbody>
                     <tr v-for="s in subscribers" :key="s.id">
                         <td>{{ s.name }}</td>
+                        <td>{{ s.account_number }}</td>
                         <td>{{ s.email }}</td>
                         <td>{{ s.phone }}</td>
                         <td>{{ s.subscriptions_count }}</td>
@@ -276,6 +281,10 @@ onMounted(load);
                 <VRow>
                     <VCol cols="12">
                         <VTextField label="Name" v-model="form.name" />
+                    </VCol>
+
+                    <VCol cols="12">
+                        <VTextField label="Account Number" v-model="form.account_number" />
                     </VCol>
 
                     <VCol cols="12">
