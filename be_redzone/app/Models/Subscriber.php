@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class Subscriber extends Model
 {
-    protected $fillable = ['name', 'email', 'phone', 'address'];
+    protected $fillable = ['name', 'email', 'account_number', 'phone', 'address'];
 
     public function subscriptions()
     {

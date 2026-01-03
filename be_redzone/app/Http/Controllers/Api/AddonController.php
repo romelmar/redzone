@@ -33,7 +33,7 @@ class AddonController extends Controller
             'subscription_id' => 'required|exists:subscriptions,id',
             'name'            => 'required|string|max:255',
             'amount'          => 'required|numeric|min:0',
-            'bill_month'      => 'nullable|date',  // optional
+            'credit_month'      => 'nullable|date',  // optional
             'description'      => 'required|string|max:255',
         ]);
         
@@ -58,7 +58,7 @@ class AddonController extends Controller
             'subscription_id' => 'sometimes|exists:subscriptions,id',
             'name'            => 'sometimes|string|max:255',
             'amount'          => 'sometimes|numeric|min:0',
-            'bill_month'      => 'nullable|date',
+            'credit_month'      => 'nullable|date',
         ]);
 
         $addon->update($data);

@@ -60,6 +60,8 @@ public function search(Request $request)
             'address' => 'nullable|string',
         ]);
 
+
+
         $subscriber = Subscriber::create($data);
 
         return response()->json(['message' => 'Subscriber created successfully', 'subscriber' => $subscriber]);
@@ -76,6 +78,7 @@ public function search(Request $request)
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:subscribers,email,' . $subscriber->id,
             'phone' => 'nullable|string|max:50',
+            'account_number' => 'nullable|string|max:50',
             'address' => 'nullable|string',
         ]);
 
@@ -90,4 +93,6 @@ public function search(Request $request)
 
         return response()->json(['message' => 'Subscriber deleted successfully']);
     }
+
+    
 }

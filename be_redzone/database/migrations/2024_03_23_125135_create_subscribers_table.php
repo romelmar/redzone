@@ -14,6 +14,7 @@ return new class extends Migration
         Schema::create('subscribers', function (Blueprint $table) {
             $table->id();
             $table->string('name');
+            $table->string('account_number')->unique(); 
             $table->string('email')->default('');
             $table->string('phone')->nullable();
             $table->string('address')->nullable();

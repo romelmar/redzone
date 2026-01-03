@@ -13,10 +13,10 @@ class Addon extends Model
     'name',
     'description',
     'amount',
-    'bill_month',
+    'credit_month',
 ];
 
-  protected $casts = ['bill_month' => 'date'];
+  protected $casts = ['credit_month' => 'date'];
 
   public function plans()
   {

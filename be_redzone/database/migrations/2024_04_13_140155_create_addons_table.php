@@ -17,11 +17,11 @@ return new class extends Migration {
 
             $table->string('name');
             $table->decimal('amount', 10, 2);
-            $table->date('bill_month'); // YYYY-MM-01
+            $table->date('credit_month'); // YYYY-MM-01
 
             $table->timestamps();
 
-            $table->index(['subscription_id', 'bill_month']);
+            $table->index(['subscription_id', 'credit_month']);
         });
     }
 

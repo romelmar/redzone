@@ -15,7 +15,7 @@ return new class extends Migration {
                 ->constrained()
                 ->cascadeOnDelete();
 
-            $table->integer('days');
+            $table->integer('outage_days');
             $table->decimal('amount', 10, 2);
             $table->date('credit_month'); // YYYY-MM-01
             $table->text('reason')->nullable();

@@ -45,7 +45,7 @@ class SubscriptionHistoryController extends Controller
         // ─────────────────────────────────────────────
         foreach ($subscription->payments as $p) {
             $events[] = [
-                'date'        => $p->paid_at ? $p->paid_at->format('Y-m-d') : $p->created_at->format('Y-m-d'),
+                'date'        => $p->payment_date ? $p->payment_date->format('Y-m-d') : $p->created_at->format('Y-m-d'),
                 'type'        => 'payment',
                 'title'       => 'Payment Received',
                 'description' => "Paid ₱" . number_format($p->amount, 2),
