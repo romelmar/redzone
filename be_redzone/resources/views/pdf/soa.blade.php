@@ -45,9 +45,10 @@
         }
 
         .header-right .highlight {
-            font-size: 14px;
+            font-size: 16px;
             font-weight: bold;
             text-transform: uppercase;
+            color: #A02017
         }
 
 
