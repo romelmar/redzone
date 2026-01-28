@@ -56,10 +56,11 @@ public function search(Request $request)
     {
         $data = $request->validate([
             'name' => 'required|string|max:255',
+            'email' => 'required|email|unique:subscribers,email,',
             'phone' => 'nullable|string|max:50',
+            'account_number' => 'nullable|string|max:50',
             'address' => 'nullable|string',
         ]);
-
 
 
         $subscriber = Subscriber::create($data);
