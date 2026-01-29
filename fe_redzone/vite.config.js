@@ -33,7 +33,6 @@ export default defineConfig({
       vueTemplate: true,
     }),
   ],
-  define: { 'process.env': {} },
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),
@@ -48,6 +47,7 @@ export default defineConfig({
   },
   build: {
     chunkSizeWarningLimit: 5000,
+      sourcemap: true, // ✅ add
   },
   base: '/',
   optimizeDeps: {
