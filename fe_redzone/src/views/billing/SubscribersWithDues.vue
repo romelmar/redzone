@@ -1,19 +1,36 @@
 <script setup>
-import { ref, onMounted } from "vue"
+import { ref, onMounted, watch } from "vue"
 import api from "@/plugins/axios"
-import { useRouter } from "vue-router"
+import debounce from "lodash/debounce"
 
 const loading = ref(false)
 const dues = ref([])
 
-const router = useRouter()
+const search = ref("")
+
+const toMoney = (v) => Number(v ?? 0).toFixed(2)
 
 const load = async () => {
   loading.value = true
-  const res = await api.get("/api/dues")
-  dues.value = res.data.data ?? res.data
-  loading.value = false
+  try {
+    const res = await api.get("/api/dues", {
+      params: {
+        search: search.value || undefined,
+      },
+    })
+    dues.value = res.data.data ?? res.data
+  } finally {
+    loading.value = false
+  }
 }
+
+const debouncedLoad = debounce(() => {
+  load()
+}, 350)
+
+watch(search, () => {
+  debouncedLoad()
+})
 
 const downloadSOA = async (subscriptionId) => {
   try {
@@ -48,8 +65,18 @@ onMounted(load)
 
 <template>
   <div class="card">
-    <div class="card-header">
-      <h5 class="mb-0">Subscribers With Dues</h5>
+    <div class="card-header d-flex flex-column flex-md-row align-center justify-space-between gap-3 my-5">
+
+      <VTextField
+        v-model="search"
+        label="Search (subscriber, email, plan)"
+        variant="outlined"
+        density="comfortable"
+        prepend-inner-icon="mdi-magnify"
+        clearable
+        hide-details
+        style="min-width: 320px"
+      />
     </div>
 
     <div class="table-responsive text-nowrap">
@@ -69,19 +96,30 @@ onMounted(load)
 
         <tbody>
           <tr v-for="d in dues" :key="d.subscription_id">
-            <td>{{ d.subscriber }}</td>
-            <td>{{ d.plan }}</td>
+            <td>
+              <div class="fw-500">{{ d.subscriber }}</div>
+              <div class="text-caption text-medium-emphasis">{{ d.subscriber_email }}</div>
+            </td>
+
+            <td>
+              <div class="fw-500">{{ d.plan }}</div>
+              <div class="text-caption text-medium-emphasis" v-if="d.speed">{{ d.speed }} Mbps</div>
+            </td>
+
             <td>{{ d.billing_period }}</td>
-            <td>₱{{ d.monthly_fee.toFixed(2) }}</td>
-            <td>₱{{ d.addons_amount.toFixed(2) }}</td>
-            <td>-₱{{ d.credits_amount.toFixed(2) }}</td>
-            <td><strong>₱{{ d.total_due.toFixed(2) }}</strong></td>
+
+            <td>₱{{ toMoney(d.monthly_fee) }}</td>
+            <td>₱{{ toMoney(d.addons_amount) }}</td>
+            <td>-₱{{ toMoney(d.credits_amount) }}</td>
+
+            <td><strong>₱{{ toMoney(d.total_due) }}</strong></td>
 
             <td class="text-end">
               <VBtn
                 size="small"
                 color="primary"
                 class="me-2"
+                :loading="loading"
                 @click="downloadSOA(d.subscription_id)"
               >
                 Download SOA
@@ -91,6 +129,7 @@ onMounted(load)
                 size="small"
                 color="success"
                 variant="outlined"
+                :loading="loading"
                 @click="emailSOA(d.subscription_id)"
               >
                 Email SOA
