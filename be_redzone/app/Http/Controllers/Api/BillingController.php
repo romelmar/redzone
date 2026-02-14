@@ -58,7 +58,7 @@ class BillingController extends Controller
                 'total_due'         => (float) $calc['total_due'],
             ];
         })
-        ->filter(fn ($row) => $row['total_due'] > 0)
+        // ->filter(fn ($row) => $row['total_due'] > 0)
         ->values();
 
         return response()->json($items);

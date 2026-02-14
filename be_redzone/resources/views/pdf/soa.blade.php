@@ -213,7 +213,7 @@
     <div class="account-info">
         <p>Name:<strong> {{ $subscription->subscriber->name }}</strong></p>
         <p>Address:<strong> {{ $subscription->subscriber->address ?? 'N/A' }}</strong></p>
-        <p>Contact:<strong> {{ $subscription->subscriber->contact ?? 'N/A' }}</strong></p>
+        <p>Contact:<strong> {{ $subscription->subscriber->phone ?? 'N/A' }}</strong></p>
         <div class="summary">
             <h3>Statement Summary</h3>
 
