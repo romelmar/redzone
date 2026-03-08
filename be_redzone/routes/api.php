@@ -13,6 +13,7 @@ use App\Http\Controllers\Auth\RegisteredUserController;
 
 use App\Http\Controllers\Api\SubscriptionController;
 use App\Http\Controllers\Api\BillingController;
+use App\Http\Controllers\Api\CollectionController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -66,3 +67,5 @@ Route::prefix('subscriptions')->group(function () {
     // Route::get('{subscription}/history', [SubscriptionController::class, 'history']);
     Route::get('{subscription}/history', [SubscriptionHistoryController::class, 'index']);
 });
+
+Route::get('/collection-sheet', [CollectionController::class, 'collectionSheet']);

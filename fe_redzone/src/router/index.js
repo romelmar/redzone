@@ -75,7 +75,7 @@ const router = createRouter({
         },
       ],
     },
-    
+
     {
       path: '/',
       component: () => import('../layouts/default.vue'),
@@ -111,6 +111,14 @@ const router = createRouter({
         },
       ],
     },
+
+    {
+      path: '/collection-sheet',
+      name: 'collection-sheet',
+      component: () => import('@/views/collections/CollectionSheet.vue'),
+      meta: { requiresAuth: true },
+    }
+
   ],
 })
 
