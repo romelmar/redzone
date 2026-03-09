@@ -4,10 +4,13 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\{Subscription, Subscriber, Plan, Addon, Payment, ServiceCredit};
+use App\Models\SubscriptionEvent;
+
 use App\Services\BillingService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Carbon\Carbon;
+
 
 class SubscriptionController extends Controller
 {
@@ -177,10 +180,22 @@ class SubscriptionController extends Controller
      */
     public function update(Request $request, Subscription $subscription)
     {
+
+        // $validated = $request->validate([
+        //     'subscriber_id'     => ['required', 'exists:subscribers,id'],
+        //     'plan_id'           => ['required', 'exists:plans,id'],
+        //     'start_date'        => ['required', 'date'],
+        //     'end_date'          => ['nullable', 'date'],
+        //     'monthly_discount'  => ['nullable', 'numeric', 'min:0'],
+        //     'active'            => ['required', 'boolean'],
+        //     'collector_name'    => ['nullable', 'string', 'max:255'],
+        // ]);
+
         $data = $request->validate([
             'plan_id'          => 'sometimes|exists:plans,id',
             'start_date'       => 'sometimes|date',
             'monthly_discount' => 'nullable|numeric|min:0',
+            'collector_name'    => ['nullable', 'string', 'max:255'],
         ]);
 
         $subscription->update($data);
@@ -313,6 +328,34 @@ class SubscriptionController extends Controller
             'message' => 'Subscription activated successfully.',
             'days_deducted' => $days,
             'subscription' => $subscription,
+        ]);
+    }
+
+    public function assignCollector(Request $request, Subscription $subscription)
+    {
+        $validated = $request->validate([
+            'collector_name' => ['nullable', 'string', 'max:255'],
+        ]);
+
+        $oldCollector = $subscription->collector_name;
+
+        $subscription->update([
+            'collector_name' => $validated['collector_name'] ?? null,
+        ]);
+
+        SubscriptionEvent::create([
+            'subscription_id' => $subscription->id,
+            'type' => 'collector',
+            'title' => 'Collector Assigned',
+            'description' => $oldCollector
+                ? "Collector changed from {$oldCollector} to " . ($validated['collector_name'] ?: 'Unassigned')
+                : "Collector assigned: " . ($validated['collector_name'] ?: 'Unassigned'),
+            'event_at' => now(),
+        ]);
+
+        return response()->json([
+            'message' => 'Collector assigned successfully.',
+            'subscription' => $subscription->fresh(['subscriber', 'plan']),
         ]);
     }
 }
