@@ -69,6 +69,7 @@ const form = ref({
   end_date: null,
   monthly_discount: 0,
   active: true, // UI toggle; mapped to status on save
+  collector_name: "",
 })
 
 // ─────────────────────────────────────────────
@@ -220,6 +221,7 @@ const openCreate = () => {
     end_date: null,
     monthly_discount: 0,
     active: true,
+      collector_name: "",
   }
   dialog.value = true
 }
@@ -241,6 +243,7 @@ const openEdit = (s) => {
     end_date: s.end_date,
     monthly_discount: s.monthly_discount ?? 0,
     active: status === "active",
+    collector_name: "",
   }
 
   dialog.value = true

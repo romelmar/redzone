@@ -23,3 +23,7 @@ export function activateSubscription(id) {
 export function deactivateSubscription(id) {
   return api.post(`/api/subscriptions/${id}/deactivate`);
 }
+
+export function assignCollector(subscriptionId, payload) {
+  return api.post(`/api/subscriptions/${subscriptionId}/assign-collector`, payload)
+}
