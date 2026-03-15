@@ -47,19 +47,19 @@ const assignForm = ref({
     notes: "",
 })
 
-// const collectorOptions = [
-//   "Collector A",
-//   "Collector B",
-//   "Collector C",
-// ]
+ const collectorOptions = [
+   "Collector A",
+   "Collector B",
+   "Collector C",
+ ]
 
-const collectorOptions = computed(() => {
-    const names = rows.value
-        .map(r => r.collector_name)
-        .filter(Boolean)
+// const collectorOptions = computed(() => {
+//     const names = rows.value
+//         .map(r => r.collector_name)
+//         .filter(Boolean)
 
-    return [...new Set(names)].sort((a, b) => a.localeCompare(b))
-})
+//     return [...new Set(names)].sort((a, b) => a.localeCompare(b))
+// })
 
 const money = v => Number(v ?? 0).toFixed(2)
 
@@ -365,7 +365,7 @@ onMounted(load)
 
     <VDialog v-model="assignDialog" max-width="500">
         <VCard>
-            <VCardTitle>Assign Collector</VCardTitle>
+            <VCardTitle>Assign Collector sss</VCardTitle>
 
             <VCardText>
                 <VRow>

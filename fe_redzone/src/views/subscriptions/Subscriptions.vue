@@ -68,7 +68,7 @@ const form = ref({
   start_date: "",
   end_date: null,
   monthly_discount: 0,
-  active: true, // UI toggle; mapped to status on save
+  active: true,
   collector_name: "",
 })
 
@@ -102,6 +102,14 @@ const getStatus = (s) => {
   if (s?.status) return s.status
   if (typeof s?.active === "boolean") return s.active ? "active" : "inactive"
   return "inactive"
+}
+
+// extract rows safely from paginated or plain API responses
+const extractRows = (payload) => {
+  if (Array.isArray(payload)) return payload
+  if (Array.isArray(payload?.data)) return payload.data
+  if (Array.isArray(payload?.data?.data)) return payload.data.data
+  return []
 }
 
 // Bulk selection helpers
@@ -149,9 +157,6 @@ const load = async () => {
       sort_dir: sortDir.value,
     })
 
-    // supports either:
-    //  A) { data: [...], total: n }
-    //  B) { data: { data: [...], total: n } }
     const rows = data?.data?.data ?? data?.data ?? []
     const total = data?.data?.total ?? data?.total ?? 0
 
@@ -175,25 +180,55 @@ watch([search, activeFilter, planFilter], () => {
 // DROPDOWNS FOR FORM FILTERS
 // ─────────────────────────────────────────────
 const loadDropdowns = async () => {
-  const [subsRes, plansRes] = await Promise.all([fetchSubscribers(), fetchPlans()])
+  const [subsRes, plansRes] = await Promise.all([
+    fetchSubscribers({
+      per_page: 500,
+      sort_by: "name",
+      sort_dir: "asc",
+    }),
+    fetchPlans(),
+  ])
 
-  subscribers.value = subsRes.data?.data ?? subsRes.data ?? []
-  plans.value = plansRes.data?.data ?? plansRes.data ?? []
+  const subscriberRows = extractRows(subsRes.data)
+  const planRows = extractRows(plansRes.data)
+
+  subscribers.value = subscriberRows.map((s) => ({
+    id: s.id,
+    name: s.name,
+    email: s.email,
+    phone: s.phone,
+    address: s.address,
+  }))
+
+  plans.value = planRows.map((p) => ({
+    id: p.id,
+    name: p.name,
+    speed: p.speed,
+    price: p.price,
+  }))
 }
 
 // ─────────────────────────────────────────────
 // AUTOCOMPLETE REMOTE SEARCH (dialog)
 // ─────────────────────────────────────────────
 const onSearch = debounce(async (query) => {
-  if (!query) {
-    searchResults.value = []
+  const q = (query ?? "").trim()
+
+  if (!q) {
+    searchResults.value = subscribers.value
     return
   }
 
   searchLoading.value = true
   try {
-    const res = await searchSubscribers(query)
-    searchResults.value = res.data?.data ?? res.data ?? []
+    const res = await searchSubscribers(q)
+    searchResults.value = extractRows(res.data).map((s) => ({
+      id: s.id,
+      name: s.name,
+      email: s.email,
+      phone: s.phone,
+      address: s.address,
+    }))
   } finally {
     searchLoading.value = false
   }
@@ -211,7 +246,7 @@ const onPickSubscriber = (subscriber) => {
 const openCreate = () => {
   selectedSubscriber.value = null
   searchText.value = ""
-  searchResults.value = []
+  searchResults.value = [...subscribers.value]
 
   form.value = {
     id: null,
@@ -221,7 +256,7 @@ const openCreate = () => {
     end_date: null,
     monthly_discount: 0,
     active: true,
-      collector_name: "",
+    collector_name: "",
   }
   dialog.value = true
 }
@@ -234,6 +269,7 @@ const openEdit = (s) => {
     found ?? (s.subscriber ? { id: s.subscriber_id, name: s.subscriber.name } : null)
 
   searchText.value = selectedSubscriber.value?.name ?? ""
+  searchResults.value = [...subscribers.value]
 
   form.value = {
     id: s.id,
@@ -243,7 +279,7 @@ const openEdit = (s) => {
     end_date: s.end_date,
     monthly_discount: s.monthly_discount ?? 0,
     active: status === "active",
-    collector_name: "",
+    collector_name: s.collector_name ?? "",
   }
 
   dialog.value = true
@@ -414,7 +450,7 @@ onMounted(async () => {
         />
       </div>
 
-      <VBtn color="primary" @click="openCreate"> Add Subscription </VBtn>
+      <VBtn color="primary" @click="openCreate">Add Subscription</VBtn>
     </div>
 
     <!-- Bulk actions bar -->
@@ -426,12 +462,14 @@ onMounted(async () => {
         <strong>{{ selectedIds.length }}</strong> selected
       </div>
       <div class="d-flex gap-2 mb-2">
-        <VBtn size="small" color="success" variant="tonal" @click="bulkActivate"> Activate </VBtn>
+        <VBtn size="small" color="success" variant="tonal" @click="bulkActivate">Activate</VBtn>
         <VBtn size="small" color="warning" variant="tonal" @click="bulkUpdateStatus('suspended')">
           Suspend
         </VBtn>
-        <VBtn size="small" color="secondary" variant="tonal" @click="bulkDeactivate"> Deactivate </VBtn>
-        <VBtn size="small" color="error" variant="outlined" @click="bulkDelete"> Delete </VBtn>
+        <VBtn size="small" color="secondary" variant="tonal" @click="bulkDeactivate">
+          Deactivate
+        </VBtn>
+        <VBtn size="small" color="error" variant="outlined" @click="bulkDelete">Delete</VBtn>
       </div>
     </div>
 
@@ -502,8 +540,11 @@ onMounted(async () => {
                 :model-value="selectedIds.includes(s.id)"
                 @update:model-value="
                   (checked) => {
-                    if (checked) selectedIds.push(s.id)
-                    else selectedIds = selectedIds.filter((id) => id !== s.id)
+                    if (checked) {
+                      if (!selectedIds.includes(s.id)) selectedIds.push(s.id)
+                    } else {
+                      selectedIds.value = selectedIds.value.filter((id) => id !== s.id)
+                    }
                   }
                 "
                 hide-details
@@ -511,14 +552,10 @@ onMounted(async () => {
               />
             </td>
 
-            <td>
-              {{ s.subscriber?.name ?? "—" }}
-            </td>
+            <td>{{ s.subscriber?.name ?? "—" }}</td>
 
             <td>
-              <div class="fw-500">
-                {{ s.plan?.name ?? "—" }}
-              </div>
+              <div class="fw-500">{{ s.plan?.name ?? "—" }}</div>
               <div class="text-caption text-medium-emphasis">
                 {{ s.plan?.speed ? `${s.plan.speed} Mbps` : "" }}
                 <span v-if="s.plan?.price"> • {{ formatCurrency(s.plan.price) }} </span>
@@ -526,9 +563,7 @@ onMounted(async () => {
             </td>
 
             <td>{{ formatIsoToReadable(s.start_date) }}</td>
-
             <td>{{ formatCurrency(s.monthly_discount) }}</td>
-
             <td>{{ formatCurrency(s.current_balance) }}</td>
 
             <td>
@@ -538,13 +573,13 @@ onMounted(async () => {
             </td>
 
             <td class="text-end">
-              <VBtn size="small" variant="text" class="me-1" @click="openBillingPreview(s)"> Billing </VBtn>
+              <VBtn size="small" variant="text" class="me-1" @click="openBillingPreview(s)">Billing</VBtn>
 
-              <VBtn size="small" variant="text" class="me-1" @click="openHistory(s)"> History </VBtn>
+              <VBtn size="small" variant="text" class="me-1" @click="openHistory(s)">History</VBtn>
 
               <VMenu>
                 <template #activator="{ props }">
-                  <VBtn size="small" variant="outlined" v-bind="props"> Actions </VBtn>
+                  <VBtn size="small" variant="outlined" v-bind="props">Actions</VBtn>
                 </template>
 
                 <VList density="compact">
@@ -630,39 +665,60 @@ onMounted(async () => {
             <VAutocomplete
               v-model="selectedSubscriber"
               v-model:search="searchText"
-              label="Search subscribers"
-              clearable
+              label="Subscriber"
               variant="outlined"
               prepend-inner-icon="mdi-magnify"
-              :items="searchResults"
+              :items="searchResults.length ? searchResults : subscribers"
               item-title="name"
               item-value="id"
               return-object
+              clearable
               :loading="searchLoading"
               :no-filter="true"
               @update:search="onSearch"
               @update:modelValue="onPickSubscriber"
-              hide-details
-            />
+            >
+              <template #item="{ props, item }">
+                <VListItem v-bind="props">
+                  <!-- <VListItemTitle>{{ item.raw?.name ?? "—" }}</VListItemTitle> -->
+                  <VListItemSubtitle>
+                    {{ item.raw?.email ?? "No email" }}
+                  </VListItemSubtitle>
+                </VListItem>
+              </template>
+            </VAutocomplete>
+
             <div v-if="form.subscriber_id" class="text-caption mt-1 text-medium-emphasis">
               Selected ID: {{ form.subscriber_id }}
             </div>
           </VCol>
 
           <VCol cols="12" md="6">
-            <VSelect v-model="form.plan_id" :items="plans" item-title="name" item-value="id" label="Plan" />
+            <VSelect
+              v-model="form.plan_id"
+              :items="plans"
+              item-title="name"
+              item-value="id"
+              label="Plan"
+              variant="outlined"
+            />
           </VCol>
 
           <VCol cols="12" md="6">
-            <VTextField v-model="form.start_date" label="Start Date" type="date" />
+            <VTextField v-model="form.start_date" label="Start Date" type="date" variant="outlined" />
           </VCol>
 
           <VCol cols="12" md="6">
-            <VTextField v-model="form.end_date" label="End Date (optional)" type="date" />
+            <VTextField v-model="form.end_date" label="End Date (optional)" type="date" variant="outlined" />
           </VCol>
 
           <VCol cols="12" md="6">
-            <VTextField v-model.number="form.monthly_discount" label="Monthly Discount" type="number" />
+            <VTextField
+              v-model.number="form.monthly_discount"
+              label="Monthly Discount"
+              type="number"
+              variant="outlined"
+            />
           </VCol>
 
           <VCol cols="12" md="6" class="d-flex align-center">
@@ -689,15 +745,9 @@ onMounted(async () => {
         </div>
 
         <div v-else-if="billingData">
-          <p class="mb-1">
-            <strong>Subscriber:</strong> {{ billingData.subscriber }}
-          </p>
-          <p class="mb-1">
-            <strong>Plan:</strong> {{ billingData.plan }}
-          </p>
-          <p class="mb-1">
-            <strong>Billing Period:</strong> {{ billingData.billing_period }}
-          </p>
+          <p class="mb-1"><strong>Subscriber:</strong> {{ billingData.subscriber }}</p>
+          <p class="mb-1"><strong>Plan:</strong> {{ billingData.plan }}</p>
+          <p class="mb-1"><strong>Billing Period:</strong> {{ billingData.billing_period }}</p>
 
           <VTable density="compact" class="mt-4">
             <tbody>
@@ -785,7 +835,6 @@ onMounted(async () => {
   opacity: 0.6;
 }
 
-/* Sneat-style pagination */
 .pagination-sneat .v-pagination__item,
 .pagination-sneat .v-pagination__first,
 .pagination-sneat .v-pagination__last,

@@ -87,6 +87,12 @@ const vuetifyTheme = useTheme()
         icon: 'bx-coin',
         to: '/subscribers-with-dues',
       }" />
+      <VerticalNavLink :item="{
+        title: 'Collection Sheet',
+        icon: 'bx-file',
+        to: '/collection-sheet',
+      }" />
+      
       <!-- <VerticalNavLink
         :item="{
           title: 'Account Settings',

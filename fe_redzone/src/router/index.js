@@ -112,23 +112,26 @@ const router = createRouter({
       ],
     },
 
-    {
-      path: '/collection-sheet',
-      name: 'collection-sheet',
-      component: () => import('@/views/collections/CollectionSheet.vue'),
-      meta: { requiresAuth: true },
-    },
+
     {
       path: "/collections/assign-collector",
       name: "collections-assign-collector",
       component: () => import("@/pages/collections/AssignCollector.vue"),
     },
+
+
     {
-      path: "/collections/route-sheet",
-      component: () => import("@/pages/collections/CollectionRouteSheet.vue")
+      path: '/',
+      component: () => import('../layouts/default.vue'),
+      children: [
+        {
+          path: '/collection-sheet',
+          name: 'collection-sheet',
+          component: () => import('@/views/collections/CollectionSheet.vue'),
+          meta: { requiresAuth: true },
+        },
+      ],
     },
-
-
 
   ],
 })
