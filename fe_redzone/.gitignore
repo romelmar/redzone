@@ -33,3 +33,6 @@ dist-ssr
 
 # iconify dist files
 src/@iconify/icons-bundle.js
+app/fe/node_modules
+app/fe/dist
+app/fe/.vite
