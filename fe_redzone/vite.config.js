@@ -6,6 +6,8 @@ import Components from 'unplugin-vue-components/vite'
 import { defineConfig } from 'vite'
 import vuetify from 'vite-plugin-vuetify'
 
+const isHostinger = process.env.BUILD_TARGET === 'hostinger'
+
 export default defineConfig({
   plugins: [
     vue(),
@@ -41,7 +43,7 @@ export default defineConfig({
     },
   },
   build: {
-    outDir: '../../fe',
+    outDir: isHostinger ? '../../fe' : 'dist',
     emptyOutDir: true,
     chunkSizeWarningLimit: 5000,
     sourcemap: true,
