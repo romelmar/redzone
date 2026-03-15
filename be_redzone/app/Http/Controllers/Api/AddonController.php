@@ -5,73 +5,101 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Addon;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Log;
 
 class AddonController extends Controller
 {
-    /**
-     * List all addons (optionally filtered by subscription_id).
-     */
     public function index(Request $request)
     {
-        $query = Addon::with('subscription.subscriber');
+        $perPage = (int) $request->get('per_page', 10);
+
+        $query = Addon::query()
+            ->with(['subscription.subscriber', 'subscription.plan']);
 
         if ($request->filled('subscription_id')) {
             $query->where('subscription_id', $request->subscription_id);
         }
 
-        return $query->latest()->paginate(20);
+        if ($request->filled('credit_month')) {
+            $query->whereDate('credit_month', $request->credit_month);
+        }
+
+        if ($request->filled('search')) {
+            $search = trim($request->search);
+
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                    ->orWhere('description', 'like', "%{$search}%")
+                    ->orWhereHas('subscription.subscriber', function ($sq) use ($search) {
+                        $sq->where('name', 'like', "%{$search}%")
+                            ->orWhere('email', 'like', "%{$search}%");
+                    })
+                    ->orWhereHas('subscription.plan', function ($pq) use ($search) {
+                        $pq->where('name', 'like', "%{$search}%");
+                    });
+            });
+        }
+
+        return response()->json(
+            $query->latest('credit_month')->paginate($perPage)
+        );
     }
 
-    /**
-     * Create a new addon.
-     */
     public function store(Request $request)
     {
-        Log::info($request->all());
         $data = $request->validate([
-            'subscription_id' => 'required|exists:subscriptions,id',
-            'name'            => 'required|string|max:255',
-            'amount'          => 'required|numeric|min:0',
-            'credit_month'      => 'nullable|date',  // optional
-            'description'      => 'required|string|max:255',
+            'subscription_id' => ['required', 'exists:subscriptions,id'],
+            'name'            => ['required', 'string', 'max:255'],
+            'description'     => ['nullable', 'string'],
+            'amount'          => ['required', 'numeric', 'min:0.01'],
+            'credit_month'      => ['required', 'date'],
         ]);
-        
 
-        return Addon::create($data)->load('subscription.subscriber');
+        $addon = Addon::create([
+            'subscription_id' => $data['subscription_id'],
+            'name'            => $data['name'],
+            'description'     => $data['description'] ?? null,
+            'amount'          => $data['amount'],
+            'credit_month'      => \Carbon\Carbon::parse($data['credit_month'])->startOfMonth()->toDateString(),
+        ]);
+
+        return response()->json(
+            $addon->load(['subscription.subscriber', 'subscription.plan']),
+            201
+        );
     }
 
-    /**
-     * Show single addon.
-     */
     public function show(Addon $addon)
     {
-        return $addon->load('subscription.subscriber');
+        return response()->json(
+            $addon->load(['subscription.subscriber', 'subscription.plan'])
+        );
     }
 
-    /**
-     * Update addon.
-     */
     public function update(Request $request, Addon $addon)
     {
         $data = $request->validate([
-            'subscription_id' => 'sometimes|exists:subscriptions,id',
-            'name'            => 'sometimes|string|max:255',
-            'amount'          => 'sometimes|numeric|min:0',
-            'credit_month'      => 'nullable|date',
+            'subscription_id' => ['sometimes', 'exists:subscriptions,id'],
+            'name'            => ['sometimes', 'string', 'max:255'],
+            'description'     => ['nullable', 'string'],
+            'amount'          => ['sometimes', 'numeric', 'min:0.01'],
+            'credit_month'      => ['sometimes', 'date'],
         ]);
+
+        if (array_key_exists('credit_month', $data)) {
+            $data['credit_month'] = \Carbon\Carbon::parse($data['credit_month'])->startOfMonth()->toDateString();
+        }
 
         $addon->update($data);
 
-        return $addon->load('subscription.subscriber');
+        return response()->json(
+            $addon->load(['subscription.subscriber', 'subscription.plan'])
+        );
     }
 
-    /**
-     * Delete addon.
-     */
     public function destroy(Addon $addon)
     {
         $addon->delete();
+
         return response()->noContent();
     }
 }

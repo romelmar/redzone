@@ -13,135 +13,132 @@ use Illuminate\Support\Facades\Log;
 
 class CollectionController extends Controller
 {
-    public function collectionSheet(Request $request, BillingService $billing)
-    {
-        $type = $request->get('type', 'due'); // due | overdue | disconnected
-        $search = trim((string) $request->get('search', ''));
-        $collectorName = trim((string) $request->get('collector_name', ''));
-        $assignmentDate = $request->get('assignment_date', now()->toDateString());
-        $assignmentStatus = $request->get('assignment_status'); // assigned | unassigned | null
-        $perPage = (int) $request->get('per_page', 10);
+public function collectionSheet(Request $request, BillingService $billing)
+{
+    $type = $request->get('type', 'due');
+    $search = trim((string) $request->get('search', ''));
+    $collectorName = trim((string) $request->get('collector_name', ''));
+    $assignmentDate = $request->get('assignment_date', now()->toDateString());
+    $assignmentStatus = $request->get('assignment_status');
+    $perPage = (int) $request->get('per_page', 10);
+    $page = (int) $request->get('page', 1);
 
-        $assignmentDateCarbon = Carbon::parse($assignmentDate);
-        $billMonth = $assignmentDateCarbon->copy()->startOfMonth();
+    $assignmentDateCarbon = \Carbon\Carbon::parse($assignmentDate);
+    $billMonth = $assignmentDateCarbon->copy()->startOfMonth();
 
-        $query = Subscription::query()
-            ->with([
-                'subscriber',
-                'plan',
-                'addons',
-                'payments',
-                'serviceCredits',
-                'collectionAssignments' => function ($q) use ($assignmentDate) {
-                    $q->whereDate('assignment_date', $assignmentDate);
-                },
-            ])
-            ->when($search !== '', function ($q) use ($search) {
-                $q->where(function ($qq) use ($search) {
-                    $qq->whereHas('subscriber', function ($s) use ($search) {
-                        $s->where('name', 'like', "%{$search}%")
-                            ->orWhere('email', 'like', "%{$search}%")
-                            ->orWhere('phone', 'like', "%{$search}%")
-                            ->orWhere('address', 'like', "%{$search}%");
-                    })->orWhereHas('plan', function ($p) use ($search) {
-                        $p->where('name', 'like', "%{$search}%");
-                    });
+    $subscriptions = \App\Models\Subscription::query()
+        ->with([
+            'subscriber',
+            'plan',
+            'addons',
+            'payments',
+            'serviceCredits',
+            'collectionAssignments' => function ($q) use ($assignmentDate) {
+                $q->whereDate('assignment_date', $assignmentDate);
+            },
+        ])
+        ->when($search !== '', function ($q) use ($search) {
+            $q->where(function ($qq) use ($search) {
+                $qq->whereHas('subscriber', function ($s) use ($search) {
+                    $s->where('name', 'like', "%{$search}%")
+                        ->orWhere('email', 'like', "%{$search}%")
+                        ->orWhere('phone', 'like', "%{$search}%")
+                        ->orWhere('address', 'like', "%{$search}%");
+                })->orWhereHas('plan', function ($p) use ($search) {
+                    $p->where('name', 'like', "%{$search}%");
                 });
             });
+        })
+        ->get();
 
-        $paginator = $query->paginate($perPage);
+    $rows = $subscriptions->map(function ($sub) use ($billing, $billMonth, $assignmentDateCarbon) {
+        $calc = $billing->computeFor($sub, $billMonth);
 
-        $rows = collect($paginator->items())->map(function ($sub) use (
-            $billing,
-            $billMonth,
-            $assignmentDateCarbon
-        ) {
-            $calc = $billing->computeFor($sub, $billMonth);
+        $dueDate = $sub->dueDateForMonth($billMonth);
 
-            $dueDate = $sub->dueDateForMonth($billMonth);
+        $daysOverdue = $assignmentDateCarbon->startOfDay()->gt($dueDate->copy()->startOfDay())
+            ? $dueDate->diffInDays($assignmentDateCarbon)
+            : 0;
 
-            $daysOverdue = $assignmentDateCarbon->startOfDay()->gt($dueDate->copy()->startOfDay())
-                ? $dueDate->diffInDays($assignmentDateCarbon)
-                : 0;
+        $collectionType = 'due';
 
-            $collectionType = 'due';
-
-            if (!$sub->active) {
-                $collectionType = 'disconnected';
-            } elseif ($daysOverdue > 0) {
-                $collectionType = 'overdue';
-            }
-
-            $assignment = $sub->collectionAssignments->first();
-
-            return [
-                'subscription_id'    => $sub->id,
-                'assignment_id'      => $assignment?->id,
-                'assignment_date'    => $assignment?->assignment_date?->toDateString(),
-                'collector_name'     => $assignment?->collector_name,
-                'notes'              => $assignment?->notes,
-
-                'assignment_status'  => $assignment ? 'assigned' : 'unassigned',
-
-                'subscriber_name'    => $sub->subscriber?->name,
-                'subscriber_email'   => $sub->subscriber?->email,
-                'subscriber_phone'   => $sub->subscriber?->phone,
-                'subscriber_address' => $sub->subscriber?->address,
-
-                'plan_name'          => $sub->plan?->name,
-                'plan_speed'         => $sub->plan?->speed,
-
-                'due_date'           => $dueDate?->toDateString(),
-                'days_overdue'       => $daysOverdue,
-                'collection_type'    => $collectionType,
-                'active'             => (bool) $sub->active,
-
-                'previous_balance'   => (float) ($calc['previous_balance'] ?? 0),
-                'current_bill'       => (float) ($calc['current_bill'] ?? 0),
-                'total_due'          => (float) ($calc['total_due'] ?? 0),
-            ];
-        });
-
-        // Filter by due / overdue / disconnected
-        if ($type === 'due') {
-            $rows = $rows->filter(
-                fn($r) =>
-                $r['collection_type'] === 'due' && $r['total_due'] > 0
-            );
-        } elseif ($type === 'overdue') {
-            $rows = $rows->filter(
-                fn($r) =>
-                $r['collection_type'] === 'overdue' && $r['total_due'] > 0
-            );
-        } elseif ($type === 'disconnected') {
-            $rows = $rows->filter(
-                fn($r) =>
-                $r['collection_type'] === 'disconnected'
-            );
+        if (!$sub->active) {
+            $collectionType = 'disconnected';
+        } elseif ($daysOverdue > 0) {
+            $collectionType = 'overdue';
         }
 
-        // Optional collector filter
-        if ($collectorName !== '') {
-            $rows = $rows->filter(
-                fn($r) =>
-                str_contains(strtolower($r['collector_name'] ?? ''), strtolower($collectorName))
-            );
-        }
+        $assignment = $sub->collectionAssignments->first();
 
-        // Optional assigned / unassigned filter
-        if ($assignmentStatus === 'assigned') {
-            $rows = $rows->filter(fn($r) => $r['assignment_status'] === 'assigned');
-        } elseif ($assignmentStatus === 'unassigned') {
-            $rows = $rows->filter(fn($r) => $r['assignment_status'] === 'unassigned');
-        }
+        return [
+            'subscription_id'    => $sub->id,
+            'assignment_id'      => $assignment?->id,
+            'assignment_date'    => $assignment?->assignment_date?->toDateString(),
+            'collector_name'     => $assignment?->collector_name,
+            'notes'              => $assignment?->notes,
+            'assignment_status'  => $assignment ? 'assigned' : 'unassigned',
 
-        $rows = $rows->values();
+            'subscriber_name'    => $sub->subscriber?->name,
+            'subscriber_email'   => $sub->subscriber?->email,
+            'subscriber_phone'   => $sub->subscriber?->phone,
+            'subscriber_address' => $sub->subscriber?->address,
 
-        // Replace paginator collection
-        $paginator->setCollection($rows);
+            'plan_name'          => $sub->plan?->name,
+            'plan_speed'         => $sub->plan?->speed,
 
-        return response()->json($paginator);
+            'due_date'           => $dueDate?->toDateString(),
+            'days_overdue'       => $daysOverdue,
+            'collection_type'    => $collectionType,
+            'active'             => (bool) $sub->active,
+
+            'previous_balance'   => (float) ($calc['previous_balance'] ?? 0),
+            'current_bill'       => (float) ($calc['current_bill'] ?? 0),
+            'total_due'          => (float) ($calc['total_due'] ?? 0),
+        ];
+    });
+
+    if ($type === 'due') {
+        $rows = $rows->filter(fn ($r) =>
+            $r['collection_type'] === 'due' && $r['total_due'] > 0
+        );
+    } elseif ($type === 'overdue') {
+        $rows = $rows->filter(fn ($r) =>
+            $r['collection_type'] === 'overdue' && $r['total_due'] > 0
+        );
+    } elseif ($type === 'disconnected') {
+        $rows = $rows->filter(fn ($r) =>
+            $r['collection_type'] === 'disconnected'
+        );
     }
+
+    if ($collectorName !== '') {
+        $rows = $rows->filter(fn ($r) =>
+            str_contains(strtolower($r['collector_name'] ?? ''), strtolower($collectorName))
+        );
+    }
+
+    if ($assignmentStatus === 'assigned') {
+        $rows = $rows->filter(fn ($r) => $r['assignment_status'] === 'assigned');
+    } elseif ($assignmentStatus === 'unassigned') {
+        $rows = $rows->filter(fn ($r) => $r['assignment_status'] === 'unassigned');
+    }
+
+    $rows = $rows->values();
+
+    $total = $rows->count();
+
+    $paginatedRows = $rows
+        ->slice(($page - 1) * $perPage, $perPage)
+        ->values();
+
+    return response()->json([
+        'data' => $paginatedRows,
+        'total' => $total,
+        'current_page' => $page,
+        'per_page' => $perPage,
+        'last_page' => (int) ceil($total / $perPage),
+    ]);
+}
 
 
 
