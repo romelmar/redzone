@@ -1,13 +1,14 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, watch, computed } from "vue"
+import debounce from "lodash/debounce"
 import {
-    fetchPayments,
-    createPayment,
-    updatePayment,
-    deletePayment,
-} from '@/services/payments'
-import { fetchSubscriptions } from '@/services/subscriptions'
-import { formatIsoToReadable } from '@/helpers/dateUtils'
+  fetchPayments,
+  createPayment,
+  updatePayment,
+  deletePayment,
+} from "@/services/payments"
+import { fetchSubscriptions } from "@/services/subscriptions"
+import { formatIsoToReadable } from "@/helpers/dateUtils"
 
 const loading = ref(false)
 const dialog = ref(false)
@@ -15,136 +16,399 @@ const dialog = ref(false)
 const payments = ref([])
 const subscriptions = ref([])
 
+const page = ref(1)
+const perPage = ref(10)
+const totalItems = ref(0)
+
+const search = ref("")
+const paymentTypeFilter = ref(null)
+const dateFrom = ref("")
+const dateTo = ref("")
+
 const form = ref({
+  id: null,
+  subscription_id: null,
+  amount: null,
+  payment_date: "",
+  payment_type: "",
+  remarks: "",
+})
+
+const paymentTypeOptions = [
+  { label: "All", value: null },
+  { label: "Payment", value: "payment" },
+  { label: "Offset", value: "offset" },
+  { label: "Adjustment", value: "adjustment" },
+]
+
+const subscriptionOptions = computed(() => {
+  return subscriptions.value.map(sub => ({
+    ...sub,
+    label: `${sub.subscriber?.name ?? "—"} - ${sub.plan?.name ?? "—"}`,
+  }))
+})
+
+const money = v => Number(v ?? 0).toFixed(2)
+
+const load = async () => {
+  loading.value = true
+  try {
+    const [payRes, subsRes] = await Promise.all([
+      fetchPayments({
+        page: page.value,
+        per_page: perPage.value,
+        search: search.value || undefined,
+        payment_type: paymentTypeFilter.value || undefined,
+        date_from: dateFrom.value || undefined,
+        date_to: dateTo.value || undefined,
+      }),
+      fetchSubscriptions({
+        per_page: 500,
+        sort_by: "subscriber_name",
+        sort_dir: "asc",
+      }),
+    ])
+
+    payments.value = payRes.data?.data?.data ?? payRes.data?.data ?? payRes.data ?? []
+    totalItems.value = payRes.data?.data?.total ?? payRes.data?.total ?? payments.value.length
+
+    const subsRows =
+      subsRes.data?.data?.data ??
+      subsRes.data?.data ??
+      subsRes.data ??
+      []
+
+    subscriptions.value = subsRows
+  } finally {
+    loading.value = false
+  }
+}
+
+const debouncedLoad = debounce(() => {
+  page.value = 1
+  load()
+}, 350)
+
+watch(search, debouncedLoad)
+watch([paymentTypeFilter, dateFrom, dateTo], () => {
+  page.value = 1
+  load()
+})
+
+const openCreate = () => {
+  form.value = {
     id: null,
     subscription_id: null,
     amount: null,
-    payment_date: '',
-    payment_type: '',
-    remarks: '',
-})
-
-const load = async () => {
-    loading.value = true
-    const [payRes, subsRes] = await Promise.all([
-        fetchPayments(),
-        fetchSubscriptions(),
-    ])
-    payments.value = payRes.data.data ?? payRes.data
-    subscriptions.value = subsRes.data.data ?? subsRes.data
-    loading.value = false
-}
-
-const openCreate = () => {
-    form.value = {
-        id: null,
-        subscription_id: null,
-        amount: null,
-        payment_date: new Date().toISOString().slice(0, 10),
-        payment_type: '',
-        remarks: '',
-    }
-    dialog.value = true
+    payment_date: new Date().toISOString().slice(0, 10),
+    payment_type: "payment",
+    remarks: "",
+  }
+  dialog.value = true
 }
 
 const openEdit = (p) => {
-    form.value = { ...p }
-    dialog.value = true
+  form.value = {
+    ...p,
+    payment_type: p.payment_type ?? "",
+    remarks: p.remarks ?? "",
+  }
+  dialog.value = true
 }
 
 const save = async () => {
-    if (form.value.id) {
-        await updatePayment(form.value.id, form.value)
-    } else {
-        await createPayment(form.value)
-    }
-    dialog.value = false
-    load()
+  if (!form.value.subscription_id) {
+    alert("Please select a subscription.")
+    return
+  }
+
+  if (!form.value.amount || Number(form.value.amount) <= 0) {
+    alert("Please enter a valid amount.")
+    return
+  }
+
+  if (!form.value.payment_date) {
+    alert("Please select a payment date.")
+    return
+  }
+
+  if (form.value.id) {
+    await updatePayment(form.value.id, form.value)
+  } else {
+    await createPayment(form.value)
+  }
+
+  dialog.value = false
+  load()
 }
 
 const remove = async (p) => {
-    if (!confirm(`Delete payment #${p.id}?`)) return
-    await deletePayment(p.id)
-    load()
+  if (!confirm(`Delete payment #${p.id}?`)) return
+  await deletePayment(p.id)
+  load()
 }
 
 const subscriptionLabel = (p) => {
-    const sub = subscriptions.value.find(s => s.id === p.subscription_id)
-    if (!sub) return '—'
-    return `${sub.subscriber?.name ?? ''} - ${sub.plan?.name ?? ''}`
+  const sub = subscriptions.value.find(s => s.id === p.subscription_id)
+  if (!sub) return p.subscription?.subscriber?.name
+    ? `${p.subscription?.subscriber?.name ?? ""} - ${p.subscription?.plan?.name ?? ""}`
+    : "—"
+
+  return `${sub.subscriber?.name ?? ""} - ${sub.plan?.name ?? ""}`
 }
 
 onMounted(load)
 </script>
 
 <template>
-    <div class="card">
+  <div class="card">
+    <VCardTitle class="d-flex flex-column flex-md-row align-center justify-space-between gap-3">
+      <span>Payments</span>
 
-        <VCardTitle class="d-flex justify-space-between align-center">
-            <span>Payments</span>
-            <VBtn color="primary" @click="openCreate">Add Payment</VBtn>
-        </VCardTitle>
+      <div class="d-flex flex-wrap gap-3 align-center">
+        <VTextField
+          v-model="search"
+          label="Search subscription / remarks"
+          variant="outlined"
+          density="comfortable"
+          prepend-inner-icon="mdi-magnify"
+          clearable
+          hide-details
+          style="min-width: 260px"
+        />
 
-        <div class="table-responsive text-nowrap">
-            <VTable>
-                <thead>
-                    <tr>
-                        <th>Subscription</th>
-                        <th>Amount</th>
-                        <th>Paid At</th>
-                        <th>Payment type</th>
-                        <th>remarks</th>
-                        <th class="text-end">Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr v-for="p in payments" :key="p.id">
-                        <td>{{ subscriptionLabel(p) }}</td>
-                        <td>₱{{ Number(p.amount).toFixed(2) }}</td>
-                        <td>{{ formatIsoToReadable(p.payment_date) }}</td>
-                        <td>{{ p.payment_type }}</td>
-                        <td>{{ p.remarks }}</td>
-                        <td class="text-end">
-                            <VBtn size="small" variant="outlined" class="me-1" @click="openEdit(p)">Edit</VBtn>
-                            <VBtn size="small" color="error" variant="outlined" @click="remove(p)">Delete</VBtn>
-                        </td>
-                    </tr>
-                    <tr v-if="!loading && payments.length === 0">
-                        <td colspan="6" class="text-center text-muted py-4">No payments found</td>
-                    </tr>
-                </tbody>
-            </VTable>
+        <VSelect
+          v-model="paymentTypeFilter"
+          :items="paymentTypeOptions"
+          item-title="label"
+          item-value="value"
+          label="Payment Type"
+          variant="outlined"
+          density="comfortable"
+          clearable
+          hide-details
+          style="min-width: 180px"
+        />
+
+        <VTextField
+          v-model="dateFrom"
+          label="From"
+          type="date"
+          variant="outlined"
+          density="comfortable"
+          hide-details
+          style="min-width: 160px"
+        />
+
+        <VTextField
+          v-model="dateTo"
+          label="To"
+          type="date"
+          variant="outlined"
+          density="comfortable"
+          hide-details
+          style="min-width: 160px"
+        />
+
+        <VBtn color="primary" @click="openCreate">Add Payment</VBtn>
+      </div>
+    </VCardTitle>
+
+    <div class="table-responsive text-nowrap">
+      <VTable>
+        <thead>
+          <tr>
+            <th>Subscription</th>
+            <th>Amount</th>
+            <th>Paid At</th>
+            <th>Payment Type</th>
+            <th>Remarks</th>
+            <th class="text-end">Actions</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          <tr v-for="p in payments" :key="p.id">
+            <td>
+              <div class="fw-500">{{ subscriptionLabel(p) }}</div>
+            </td>
+
+            <td>₱{{ money(p.amount) }}</td>
+            <td>{{ formatIsoToReadable(p.payment_date) }}</td>
+
+            <td>
+              <VChip
+                size="small"
+                :color="
+                  p.payment_type === 'payment'
+                    ? 'success'
+                    : p.payment_type === 'offset'
+                    ? 'warning'
+                    : 'secondary'
+                "
+              >
+                {{ p.payment_type || "—" }}
+              </VChip>
+            </td>
+
+            <td>{{ p.remarks || "—" }}</td>
+
+            <td class="text-end">
+              <VBtn size="small" variant="outlined" class="me-1" @click="openEdit(p)">
+                Edit
+              </VBtn>
+              <VBtn size="small" color="error" variant="outlined" @click="remove(p)">
+                Delete
+              </VBtn>
+            </td>
+          </tr>
+
+          <tr v-if="!loading && payments.length === 0">
+            <td colspan="6" class="text-center text-muted py-4">No payments found</td>
+          </tr>
+        </tbody>
+      </VTable>
+
+      <div class="d-flex flex-column flex-sm-row align-center justify-space-between px-4 py-3 gap-3">
+        <VPagination
+          v-model="page"
+          :length="Math.ceil(totalItems / perPage) || 1"
+          @update:modelValue="load"
+          rounded="lg"
+          variant="flat"
+          color="primary"
+          class="pagination-sneat"
+        />
+
+        <div class="d-flex align-center">
+          <span class="me-2 text-body-2">Rows per page:</span>
+
+          <VSelect
+            v-model="perPage"
+            :items="[10, 20, 50, 100]"
+            density="comfortable"
+            variant="outlined"
+            hide-details
+            class="sneat-rows-select"
+            style="max-width: 110px"
+            @update:modelValue="() => { page = 1; load() }"
+          />
         </div>
+      </div>
     </div>
+  </div>
 
-    <VDialog v-model="dialog" persistent max-width="700">
-        <VCard>
-            <VCardTitle>{{ form.id ? 'Edit Payment' : 'Add Payment' }}</VCardTitle>
-            <VCardText>
-                <VRow>
-                    <VCol cols="12">
-                        <VSelect v-model="form.subscription_id" :items="subscriptions" item-title="subscriber.name"
-                            item-value="id" label="Subscription" />
-                    </VCol>
-                    <VCol cols="12" md="6">
-                        <VTextField label="Amount" type="number" v-model.number="form.amount" />
-                    </VCol>
-                    <VCol cols="12" md="6">
-                        <VTextField label="Paid At" type="date" v-model="form.payment_date" />
-                    </VCol>
-                    <VCol cols="12" md="6">
-                        <VTextField label="Payment Type" v-model="form.payment_type" />
-                    </VCol>
-                    <VCol cols="12" md="6">
-                        <VTextarea label="Remarks" rows="2" v-model="form.remarks" />
-                    </VCol>
-                </VRow>
-            </VCardText>
-            <VCardActions>
-                <VSpacer />
-                <VBtn variant="tonal" @click="dialog = false">Cancel</VBtn>
-                <VBtn color="primary" @click="save">Save</VBtn>
-            </VCardActions>
-        </VCard>
-    </VDialog>
+  <VDialog v-model="dialog" persistent max-width="700">
+    <VCard>
+      <VCardTitle>{{ form.id ? "Edit Payment" : "Add Payment" }}</VCardTitle>
+
+      <VCardText>
+        <VRow>
+          <VCol cols="12">
+            <VAutocomplete
+              v-model="form.subscription_id"
+              :items="subscriptionOptions"
+              item-title="label"
+              item-value="id"
+              label="Subscription"
+              variant="outlined"
+              clearable
+            >
+              <template #item="{ props, item }">
+                <VListItem v-bind="props">
+                  <VListItemTitle>
+                    {{ item.raw.subscriber?.name ?? "—" }}
+                  </VListItemTitle>
+                  <VListItemSubtitle>
+                    {{ item.raw.plan?.name ?? "—" }}
+                    <span v-if="item.raw.plan?.price">
+                      — ₱{{ money(item.raw.plan.price) }}
+                    </span>
+                  </VListItemSubtitle>
+                </VListItem>
+              </template>
+
+              <template #selection="{ item }">
+                <span>
+                  {{ item.raw.subscriber?.name ?? "—" }} - {{ item.raw.plan?.name ?? "—" }}
+                </span>
+              </template>
+            </VAutocomplete>
+          </VCol>
+
+          <VCol cols="12" md="6">
+            <VTextField
+              label="Amount"
+              type="number"
+              v-model.number="form.amount"
+              variant="outlined"
+            />
+          </VCol>
+
+          <VCol cols="12" md="6">
+            <VTextField
+              label="Paid At"
+              type="date"
+              v-model="form.payment_date"
+              variant="outlined"
+            />
+          </VCol>
+
+          <VCol cols="12" md="6">
+            <VSelect
+              label="Payment Type"
+              v-model="form.payment_type"
+              :items="['payment', 'offset', 'adjustment']"
+              variant="outlined"
+            />
+          </VCol>
+
+          <VCol cols="12" md="6">
+            <VTextarea
+              label="Remarks"
+              rows="2"
+              v-model="form.remarks"
+              variant="outlined"
+            />
+          </VCol>
+        </VRow>
+      </VCardText>
+
+      <VCardActions>
+        <VSpacer />
+        <VBtn variant="tonal" @click="dialog = false">Cancel</VBtn>
+        <VBtn color="primary" @click="save">Save</VBtn>
+      </VCardActions>
+    </VCard>
+  </VDialog>
 </template>
+
+<style scoped>
+.pagination-sneat .v-pagination__item,
+.pagination-sneat .v-pagination__first,
+.pagination-sneat .v-pagination__last,
+.pagination-sneat .v-pagination__next,
+.pagination-sneat .v-pagination__prev {
+  border-radius: 8px !important;
+  min-width: 38px !important;
+  height: 38px !important;
+  font-weight: 500;
+  box-shadow: var(--v-shadow-2);
+  transition: all 0.2s ease-in-out;
+}
+
+.pagination-sneat .v-pagination__item:hover {
+  background-color: rgba(var(--v-theme-primary), 0.1) !important;
+  transform: translateY(-2px);
+}
+
+.pagination-sneat .v-pagination__item--is-active {
+  background-color: rgb(var(--v-theme-primary)) !important;
+  color: white !important;
+  box-shadow: var(--v-shadow-4);
+}
+
+.sneat-rows-select .v-field {
+  border-radius: 8px !important;
+}
+</style>

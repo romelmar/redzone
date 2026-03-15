@@ -45,9 +45,10 @@
         }
 
         .header-right .highlight {
-            font-size: 14px;
+            font-size: 16px;
             font-weight: bold;
             text-transform: uppercase;
+            color: #A02017
         }
 
 
@@ -201,7 +202,7 @@
                 </td>
                 <td> 
                     <p> TIN: 156-539-786-00000 / </p>
-                    <p>      156-539-786-00001 </p>
+                    <p> &nbsp; &nbsp; &nbsp; &nbsp; 156-539-786-00001 </p>
                    </td>
                 <td>SOA No: {{ $subscription->id }}</td>
             </tr>
@@ -212,7 +213,8 @@
     <div class="account-info">
         <p>Name:<strong> {{ $subscription->subscriber->name }}</strong></p>
         <p>Address:<strong> {{ $subscription->subscriber->address ?? 'N/A' }}</strong></p>
-        <p>Contact:<strong> {{ $subscription->subscriber->contact ?? 'N/A' }}</strong></p>
+        <p>Contact:<strong> {{ $subscription->subscriber->phone ?? 'N/A' }}</strong></p>
+        <p>Internet Plan:<strong> {{  $subscription->plan->name  ?? 'N/A' }}</strong></p>
         <div class="summary">
             <h3>Statement Summary</h3>
 

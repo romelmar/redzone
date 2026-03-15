@@ -6,13 +6,12 @@ import Components from 'unplugin-vue-components/vite'
 import { defineConfig } from 'vite'
 import vuetify from 'vite-plugin-vuetify'
 
-// https://vitejs.dev/config/
+const isHostinger = process.env.BUILD_TARGET === 'hostinger'
+
 export default defineConfig({
   plugins: [
     vue(),
     vueJsx(),
-
-    // Docs: https://github.com/vuetifyjs/vuetify-loader/tree/master/packages/vite-plugin
     vuetify({
       styles: {
         configFile: 'src/styles/variables/_vuetify.scss',
@@ -22,8 +21,6 @@ export default defineConfig({
       dirs: ['src/@core/components'],
       dts: true,
     }),
-
-    // Docs: https://github.com/antfu/unplugin-auto-import#unplugin-auto-import
     AutoImport({
       eslintrc: {
         enabled: true,
@@ -33,7 +30,6 @@ export default defineConfig({
       vueTemplate: true,
     }),
   ],
-  define: { 'process.env': {} },
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),
@@ -43,17 +39,18 @@ export default defineConfig({
       '@styles': fileURLToPath(new URL('./src/styles/', import.meta.url)),
       '@configured-variables': fileURLToPath(new URL('./src/styles/variables/_template.scss', import.meta.url)),
       '@axios': fileURLToPath(new URL('./src/plugins/axios', import.meta.url)),
-      'apexcharts': fileURLToPath(new URL('node_modules/apexcharts-clevision', import.meta.url)),
+      apexcharts: fileURLToPath(new URL('node_modules/apexcharts-clevision', import.meta.url)),
     },
   },
   build: {
+    outDir: isHostinger ? '../../fe' : 'dist',
+    emptyOutDir: true,
     chunkSizeWarningLimit: 5000,
+    sourcemap: true,
   },
   base: '/',
   optimizeDeps: {
     exclude: ['vuetify'],
-    entries: [
-      './src/**/*.vue',
-    ],
+    entries: ['./src/**/*.vue'],
   },
 })

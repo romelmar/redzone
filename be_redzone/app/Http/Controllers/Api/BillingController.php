@@ -17,52 +17,66 @@ class BillingController extends Controller
      * List all ACTIVE subscriptions with outstanding balance
      */
     public function subscribersWithDues(Request $request, BillingService $billing)
-    {
-        $monthParam = $request->get('month', now()->startOfMonth()->toDateString());
-        $billMonth  = Carbon::parse($monthParam)->startOfMonth();
+{
+    $monthParam = $request->get('month', now()->startOfMonth()->toDateString());
+    $billMonth  = Carbon::parse($monthParam)->startOfMonth();
 
-        $subscriptions = Subscription::with([
-                'subscriber',
-                'plan',
-                'addons',
-                'payments',
-                'serviceCredits',
-            ])
-            ->where('active', true)
-            ->get();
+    $search = trim((string) $request->get('search', ''));
 
-        $items = $subscriptions->map(function (Subscription $sub) use ($billing, $billMonth) {
+    $subscriptions = Subscription::query()
+        ->with(['subscriber', 'plan', 'addons', 'payments', 'serviceCredits'])
+        ->where('active', true)
+        ->when($search !== '', function ($q) use ($search) {
+            $q->where(function ($qq) use ($search) {
+                // search by subscription id (optional)
+                if (ctype_digit($search)) {
+                    $qq->orWhere('id', (int) $search);
+                }
 
-            $calc = $billing->computeFor($sub, $billMonth);
+                $qq->orWhereHas('subscriber', function ($s) use ($search) {
+                    $s->where('name', 'like', "%{$search}%")
+                      ->orWhere('email', 'like', "%{$search}%");
+                });
 
-            return [
-                'subscription_id'   => $sub->id,
-
-                'subscriber'        => $sub->subscriber?->name ?? '',
-                'subscriber_email'  => $sub->subscriber?->email,
-
-                'plan'              => $sub->plan?->name ?? '',
-                'speed'             => $sub->plan?->speed ?? null,
-
-                'billing_period'    => $billMonth->format('F Y'),
-
-                'previous_balance'  => (float) $calc['previous_balance'],
-
-                'monthly_fee'       => (float) $calc['msf'],
-                'discount'          => (float) $calc['discount'],
-                'addons_amount'     => (float) $calc['addons_total'],
-                'credits_amount'    => (float) $calc['outage_credit'],
-                'payments_amount'   => (float) $calc['payments_total'],
-
-                'current_bill'      => (float) $calc['current_bill'],
-                'total_due'         => (float) $calc['total_due'],
-            ];
+                $qq->orWhereHas('plan', function ($p) use ($search) {
+                    $p->where('name', 'like', "%{$search}%");
+                });
+            });
         })
-        ->filter(fn ($row) => $row['total_due'] > 0)
-        ->values();
+        ->get();
 
-        return response()->json($items);
-    }
+    $items = $subscriptions->map(function (Subscription $sub) use ($billing, $billMonth) {
+        $calc = $billing->computeFor($sub, $billMonth);
+
+        return [
+            'subscription_id'   => $sub->id,
+            'subscriber'        => $sub->subscriber?->name ?? '',
+            'subscriber_email'  => $sub->subscriber?->email,
+            'plan'              => $sub->plan?->name ?? '',
+            'speed'             => $sub->plan?->speed ?? null,
+            'billing_period'    => $billMonth->format('F Y'),
+
+            'previous_balance'  => (float) ($calc['previous_balance'] ?? 0),
+
+            'monthly_fee'       => (float) ($calc['msf'] ?? 0),
+            'discount'          => (float) ($calc['discount'] ?? 0),
+            'addons_amount'     => (float) ($calc['addons_total'] ?? 0),
+
+            // change key depending on your computeFor() return
+            'credits_amount'    => (float) ($calc['credit_amount'] ?? $calc['outage_credit'] ?? 0),
+
+            'payments_amount'   => (float) ($calc['payments_total'] ?? 0),
+
+            'current_bill'      => (float) ($calc['current_bill'] ?? 0),
+            'total_due'         => (float) ($calc['total_due'] ?? 0),
+        ];
+    })
+    // ->filter(fn ($row) => $row['total_due'] > 0)
+    ->values();
+
+    return response()->json($items);
+}
+
 
     /**
      * GET /api/subscriptions/{subscription}/soa-json

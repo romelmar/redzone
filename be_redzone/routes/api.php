@@ -13,6 +13,10 @@ use App\Http\Controllers\Auth\RegisteredUserController;
 
 use App\Http\Controllers\Api\SubscriptionController;
 use App\Http\Controllers\Api\BillingController;
+use App\Http\Controllers\Api\CollectionController;
+use App\Http\Controllers\Api\CollectionAssignmentController;
+use App\Http\Controllers\Api\CollectionRouteController;
+
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -52,6 +56,7 @@ Route::get('/subscriptions/{subscription}/soa',      [BillingController::class, 
 Route::post('/subscriptions/{subscription}/send-soa', [BillingController::class, 'sendSoa']);
 
 Route::get('/subscriptions/{subscription}/history', [SubscriptionHistoryController::class, 'index']);
+Route::post('/subscriptions/{subscription}/assign-collector', [SubscriptionController::class, 'assignCollector']);
 
 // Route::post('/subscriptions/{subscription}/activate', [SubscriptionStatusController::class, 'activate']);
 // Route::post('/subscriptions/{subscription}/deactivate', [SubscriptionStatusController::class, 'deactivate']);
@@ -66,3 +71,24 @@ Route::prefix('subscriptions')->group(function () {
     // Route::get('{subscription}/history', [SubscriptionController::class, 'history']);
     Route::get('{subscription}/history', [SubscriptionHistoryController::class, 'index']);
 });
+
+Route::get('/collection-sheet', [CollectionController::class, 'collectionSheet']);
+
+
+Route::get('/collection-assignments', [CollectionAssignmentController::class, 'index']);
+Route::post('/collection-assignments', [CollectionAssignmentController::class, 'store']);
+Route::delete('/collection-assignments/{collectionAssignment}', [CollectionAssignmentController::class, 'destroy']);
+
+Route::post('/collection-assignments/bulk-reassign', [CollectionAssignmentController::class, 'bulkReassign']);
+Route::post('/collection-assignments/bulk-delete', [CollectionAssignmentController::class, 'bulkDelete']);
+
+
+
+Route::get('/collection-route', [CollectionRouteController::class, 'index']);
+Route::get('/collection-route/pdf', [CollectionRouteController::class, 'exportPdf']);
+Route::get('/collection-sheet/print', [CollectionController::class, 'printCollectionSheet']);
+
+
+
+Route::post('/collection-sheet/assign-collector', [CollectionAssignmentController::class, 'assignFromCollectionSheet']);
+Route::delete('/collection-sheet/{assignment}', [CollectionController::class, 'removeAssignment']);

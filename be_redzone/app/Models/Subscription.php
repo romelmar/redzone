@@ -19,14 +19,16 @@ class Subscription extends Model
         'active',
         'deactivated_at',
         'reactivated_days_passed',
+        'collector_name',
+
     ];
 
-protected $casts = [
-    'start_date' => 'date',
-    'end_date' => 'date',
-    'active' => 'boolean',
-    'deactivated_at' => 'datetime',
-];
+    protected $casts = [
+        'start_date' => 'date',
+        'end_date' => 'date',
+        'active' => 'boolean',
+        'deactivated_at' => 'datetime',
+    ];
 
 
 
@@ -88,5 +90,15 @@ protected $casts = [
     public function histories()
     {
         return $this->hasMany(SubscriptionHistory::class);
+    }
+
+    public function events()
+    {
+        return $this->hasMany(\App\Models\SubscriptionEvent::class)->latest('event_at');
+    }
+
+    public function collectionAssignments()
+    {
+        return $this->hasMany(\App\Models\CollectionAssignment::class);
     }
 }

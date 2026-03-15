@@ -56,6 +56,8 @@ const load = async () => {
     totalItems.value = data.total;
 
     loading.value = false;
+
+    console.log("Loaded subscribers:", data);
 };
 
 // When selecting an autocomplete result

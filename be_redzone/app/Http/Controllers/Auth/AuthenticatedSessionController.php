@@ -35,6 +35,10 @@ class AuthenticatedSessionController extends Controller
             ]);
         }
 
+// Optional: remove old tokens
+        $user->tokens()->delete();
+
+
         // Token-based login (no session)
         $token = $user->createToken('api-token')->plainTextToken;
 
