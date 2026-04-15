@@ -3,6 +3,9 @@ import api from '@/plugins/axios'
 export function fetchSubscriptions(params = {}) {
   return api.get('/api/subscriptions', { params })
 }
+export function fetchSubscriptionOptions(params = {}) {
+  return api.get('/api/subscriptions/options', { params })
+}
 export function createSubscription(data) {
   return api.post('/api/subscriptions', data)
 }

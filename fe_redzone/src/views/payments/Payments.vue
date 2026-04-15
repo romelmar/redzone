@@ -1,16 +1,24 @@
 <script setup>
 import { ref, onMounted, watch, computed } from "vue"
 import debounce from "lodash/debounce"
+
 import {
   fetchPayments,
   createPayment,
   updatePayment,
   deletePayment,
 } from "@/services/payments"
-import { fetchSubscriptions } from "@/services/subscriptions"
+
+import { fetchSubscriptionOptions } from "@/services/subscriptions"
 import { formatIsoToReadable } from "@/helpers/dateUtils"
 
+/*
+|--------------------------------------------------------------------------
+| STATE
+|--------------------------------------------------------------------------
+*/
 const loading = ref(false)
+const loadingSubs = ref(false)
 const dialog = ref(false)
 
 const payments = ref([])
@@ -25,6 +33,8 @@ const paymentTypeFilter = ref(null)
 const dateFrom = ref("")
 const dateTo = ref("")
 
+const subscriptionSearch = ref("")
+
 const form = ref({
   id: null,
   subscription_id: null,
@@ -34,6 +44,11 @@ const form = ref({
   remarks: "",
 })
 
+/*
+|--------------------------------------------------------------------------
+| OPTIONS
+|--------------------------------------------------------------------------
+*/
 const paymentTypeOptions = [
   { label: "All", value: null },
   { label: "Payment", value: "payment" },
@@ -41,60 +56,95 @@ const paymentTypeOptions = [
   { label: "Adjustment", value: "adjustment" },
 ]
 
-const subscriptionOptions = computed(() => {
-  return subscriptions.value.map(sub => ({
-    ...sub,
-    label: `${sub.subscriber?.name ?? "—"} - ${sub.plan?.name ?? "—"}`,
-  }))
-})
+const subscriptionOptions = computed(() => subscriptions.value)
 
 const money = v => Number(v ?? 0).toFixed(2)
 
+/*
+|--------------------------------------------------------------------------
+| LOAD PAYMENTS
+|--------------------------------------------------------------------------
+*/
 const load = async () => {
   loading.value = true
   try {
-    const [payRes, subsRes] = await Promise.all([
-      fetchPayments({
-        page: page.value,
-        per_page: perPage.value,
-        search: search.value || undefined,
-        payment_type: paymentTypeFilter.value || undefined,
-        date_from: dateFrom.value || undefined,
-        date_to: dateTo.value || undefined,
-      }),
-      fetchSubscriptions({
-        per_page: 500,
-        sort_by: "subscriber_name",
-        sort_dir: "asc",
-      }),
-    ])
+    const payRes = await fetchPayments({
+      page: page.value,
+      per_page: perPage.value,
+      search: search.value || undefined,
+      payment_type: paymentTypeFilter.value || undefined,
+      date_from: dateFrom.value || undefined,
+      date_to: dateTo.value || undefined,
+    })
 
-    payments.value = payRes.data?.data?.data ?? payRes.data?.data ?? payRes.data ?? []
-    totalItems.value = payRes.data?.data?.total ?? payRes.data?.total ?? payments.value.length
-
-    const subsRows =
-      subsRes.data?.data?.data ??
-      subsRes.data?.data ??
-      subsRes.data ??
+    payments.value =
+      payRes.data?.data?.data ??
+      payRes.data?.data ??
+      payRes.data ??
       []
 
-    subscriptions.value = subsRows
+    totalItems.value =
+      payRes.data?.data?.total ??
+      payRes.data?.total ??
+      payments.value.length
+
   } finally {
     loading.value = false
   }
 }
 
+/*
+|--------------------------------------------------------------------------
+| LOAD SUBSCRIPTION OPTIONS (🔥 key improvement)
+|--------------------------------------------------------------------------
+*/
+const loadSubscriptionOptions = async (searchValue = "") => {
+  loadingSubs.value = true
+  try {
+    const res = await fetchSubscriptionOptions({
+      search: searchValue || undefined,
+      limit: 50,
+    })
+
+    subscriptions.value = res.data ?? []
+  } finally {
+    loadingSubs.value = false
+  }
+}
+
+/*
+|--------------------------------------------------------------------------
+| DEBOUNCE
+|--------------------------------------------------------------------------
+*/
 const debouncedLoad = debounce(() => {
   page.value = 1
   load()
 }, 350)
 
+const debouncedSubSearch = debounce((val) => {
+  loadSubscriptionOptions(val)
+}, 300)
+
+/*
+|--------------------------------------------------------------------------
+| WATCHERS
+|--------------------------------------------------------------------------
+*/
 watch(search, debouncedLoad)
+
 watch([paymentTypeFilter, dateFrom, dateTo], () => {
   page.value = 1
   load()
 })
 
+watch(subscriptionSearch, debouncedSubSearch)
+
+/*
+|--------------------------------------------------------------------------
+| CRUD
+|--------------------------------------------------------------------------
+*/
 const openCreate = () => {
   form.value = {
     id: null,
@@ -104,16 +154,23 @@ const openCreate = () => {
     payment_type: "payment",
     remarks: "",
   }
+
   dialog.value = true
 }
 
-const openEdit = (p) => {
+const openEdit = async (p) => {
   form.value = {
     ...p,
     payment_type: p.payment_type ?? "",
     remarks: p.remarks ?? "",
   }
+
   dialog.value = true
+
+  // 🔥 ensure selected subscription is loaded
+  if (p.subscription_id) {
+    await loadSubscriptionOptions()
+  }
 }
 
 const save = async () => {
@@ -148,16 +205,15 @@ const remove = async (p) => {
   load()
 }
 
-const subscriptionLabel = (p) => {
-  const sub = subscriptions.value.find(s => s.id === p.subscription_id)
-  if (!sub) return p.subscription?.subscriber?.name
-    ? `${p.subscription?.subscriber?.name ?? ""} - ${p.subscription?.plan?.name ?? ""}`
-    : "—"
-
-  return `${sub.subscriber?.name ?? ""} - ${sub.plan?.name ?? ""}`
-}
-
-onMounted(load)
+/*
+|--------------------------------------------------------------------------
+| INIT
+|--------------------------------------------------------------------------
+*/
+onMounted(() => {
+  load()
+  loadSubscriptionOptions()
+})
 </script>
 
 <template>
@@ -230,7 +286,8 @@ onMounted(load)
         <tbody>
           <tr v-for="p in payments" :key="p.id">
             <td>
-              <div class="fw-500">{{ subscriptionLabel(p) }}</div>
+              <div class="fw-500">{{ p.subscription?.subscriber?.name ?? "—" }} - 
+{{ p.subscription?.plan?.name ?? "—" }}</div>
             </td>
 
             <td>₱{{ money(p.amount) }}</td>
@@ -300,40 +357,22 @@ onMounted(load)
 
   <VDialog v-model="dialog" persistent max-width="700">
     <VCard>
-      <VCardTitle>{{ form.id ? "Edit Payment" : "Add Payment" }}</VCardTitle>
+      <VCardTitle>{{ form.id ? "Edit Payment" : "Add Payment wwww" }}</VCardTitle>
 
       <VCardText>
         <VRow>
           <VCol cols="12">
             <VAutocomplete
-              v-model="form.subscription_id"
-              :items="subscriptionOptions"
-              item-title="label"
-              item-value="id"
-              label="Subscription"
-              variant="outlined"
-              clearable
-            >
-              <template #item="{ props, item }">
-                <VListItem v-bind="props">
-                  <VListItemTitle>
-                    {{ item.raw.subscriber?.name ?? "—" }}
-                  </VListItemTitle>
-                  <VListItemSubtitle>
-                    {{ item.raw.plan?.name ?? "—" }}
-                    <span v-if="item.raw.plan?.price">
-                      — ₱{{ money(item.raw.plan.price) }}
-                    </span>
-                  </VListItemSubtitle>
-                </VListItem>
-              </template>
-
-              <template #selection="{ item }">
-                <span>
-                  {{ item.raw.subscriber?.name ?? "—" }} - {{ item.raw.plan?.name ?? "—" }}
-                </span>
-              </template>
-            </VAutocomplete>
+  v-model="form.subscription_id"
+  :items="subscriptionOptions"
+  item-title="label"
+  item-value="value"
+  v-model:search="subscriptionSearch"
+  :loading="loadingSubs"
+  label="Subscription"
+  variant="outlined"
+  clearable
+/>
           </VCol>
 
           <VCol cols="12" md="6">

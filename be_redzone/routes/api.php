@@ -38,6 +38,8 @@ Route::get('/subscribers-with-dues', [SubscriberController::class, 'getSubscribe
 // Route::get('/plans', [PlanController::class, 'index'])->name('plans.index');
 Route::apiResource('plans', PlanController::class);
 Route::apiResource('subscribers', SubscriberController::class);
+Route::get('subscriptions/options', [SubscriptionController::class, 'options']);
+
 Route::apiResource('subscriptions', SubscriptionController::class);
 
 Route::apiResource('addons', AddonController::class);
