@@ -19,7 +19,6 @@ class SubscriptionController extends Controller
      */
     public function index(Request $request)
     {
-        Log::info('Fetching subscriptions with filters', $request->all());
 
         $perPage = (int) $request->get('per_page', 10);
 
@@ -136,7 +135,57 @@ class SubscriptionController extends Controller
 
         return response()->json($subscriptions);
     }
+public function options(Request $request)
+{
+    $query = Subscription::query()
+        ->with(['subscriber', 'plan']);
 
+    /*
+    |--------------------------------------------------------------------------
+    | SEARCH (lightweight)
+    |--------------------------------------------------------------------------
+    */
+    if ($request->filled('search')) {
+        $search = $request->search;
+
+        $query->where(function ($q) use ($search) {
+            $q->whereHas('subscriber', fn($s) =>
+                $s->where('name', 'like', "%{$search}%")
+            )->orWhereHas('plan', fn($p) =>
+                $p->where('name', 'like', "%{$search}%")
+            );
+        });
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | OPTIONAL: ONLY ACTIVE
+    |--------------------------------------------------------------------------
+    */
+    if ($request->get('active_only', true)) {
+        $query->where('active', true);
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | LIMIT (important for performance)
+    |--------------------------------------------------------------------------
+    */
+    $limit = $request->get('limit', 100);
+
+    $subscriptions = $query
+        ->orderByDesc('start_date')
+        ->limit($limit)
+        ->get()
+        ->map(function ($s) {
+            return [
+                'value' => $s->id,
+                'label' => "{$s->subscriber->name} - {$s->plan->name}",
+            ];
+        });
+
+    return response()->json($subscriptions);
+}
 
     /**
      * Show a single subscription with relations
