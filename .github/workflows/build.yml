@@ -18,24 +18,23 @@ jobs:
 
       - name: Install dependencies
         run: |
-          cd app/fe
+          cd app/fe_redzone
           npm install
 
       - name: Build
         run: |
-          cd app/fe
+          cd app/fe_redzone
           npm run build
 
-      - name: Copy build to fe folder
+      - name: Copy build to fe_redzone folder
         run: |
-          rm -rf fe
-          mkdir fe
-          cp -r app/fe/dist/* fe/
-
+          rm -rf fe_redzone
+          mkdir fe_redzone
+          cp -r app/fe_redzone/dist/* fe_redzone/
       - name: Commit build
         run: |
           git config --global user.name "github-actions"
           git config --global user.email "actions@github.com"
-          git add fe
+          git add fe_redzone
           git commit -m "Auto build frontend" || echo "No changes"
           git push
