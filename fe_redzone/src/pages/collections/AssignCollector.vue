@@ -157,7 +157,7 @@ const loadAssignments = async () => {
 
 const loadSubscriptions = async () => {
     const { data } = await fetchSubscriptions({
-        per_page: 500,
+        per_page: 10,
         active: "active",
         sort_by: "subscriber_name",
         sort_dir: "asc",

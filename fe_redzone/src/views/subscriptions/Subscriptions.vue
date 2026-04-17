@@ -182,7 +182,7 @@ watch([search, activeFilter, planFilter], () => {
 const loadDropdowns = async () => {
   const [subsRes, plansRes] = await Promise.all([
     fetchSubscribers({
-      per_page: 500,
+      per_page: 10,
       sort_by: "name",
       sort_dir: "asc",
     }),

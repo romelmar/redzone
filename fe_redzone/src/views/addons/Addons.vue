@@ -31,7 +31,7 @@ const load = async () => {
     const [addonsRes, subsRes] = await Promise.all([
       fetchAddons(),
       fetchSubscriptions({
-        per_page: 500,
+        per_page: 10,
         sort_by: 'subscriber_name',
         sort_dir: 'asc',
       }),

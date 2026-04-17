@@ -16,19 +16,20 @@ class BillingController extends Controller
      * GET /api/dues
      * List all ACTIVE subscriptions with outstanding balance
      */
-    public function subscribersWithDues(Request $request, BillingService $billing)
+   public function subscribersWithDues(Request $request, BillingService $billing)
 {
     $monthParam = $request->get('month', now()->startOfMonth()->toDateString());
-    $billMonth  = Carbon::parse($monthParam)->startOfMonth();
+    $billMonth = Carbon::parse($monthParam)->startOfMonth();
 
     $search = trim((string) $request->get('search', ''));
+
+    $perPage = (int) $request->get('per_page', 10); // default 10
 
     $subscriptions = Subscription::query()
         ->with(['subscriber', 'plan', 'addons', 'payments', 'serviceCredits'])
         ->where('active', true)
         ->when($search !== '', function ($q) use ($search) {
             $q->where(function ($qq) use ($search) {
-                // search by subscription id (optional)
                 if (ctype_digit($search)) {
                     $qq->orWhere('id', (int) $search);
                 }
@@ -43,38 +44,32 @@ class BillingController extends Controller
                 });
             });
         })
-        ->get();
+        ->paginate($perPage);
 
-    $items = $subscriptions->map(function (Subscription $sub) use ($billing, $billMonth) {
+    // Transform paginated collection
+    $subscriptions->getCollection()->transform(function (Subscription $sub) use ($billing, $billMonth) {
         $calc = $billing->computeFor($sub, $billMonth);
 
         return [
-            'subscription_id'   => $sub->id,
-            'subscriber'        => $sub->subscriber?->name ?? '',
-            'subscriber_email'  => $sub->subscriber?->email,
-            'plan'              => $sub->plan?->name ?? '',
-            'speed'             => $sub->plan?->speed ?? null,
-            'billing_period'    => $billMonth->format('F Y'),
+            'subscription_id' => $sub->id,
+            'subscriber' => $sub->subscriber?->name ?? '',
+            'subscriber_email' => $sub->subscriber?->email,
+            'plan' => $sub->plan?->name ?? '',
+            'speed' => $sub->plan?->speed ?? null,
+            'billing_period' => $billMonth->format('F Y'),
 
-            'previous_balance'  => (float) ($calc['previous_balance'] ?? 0),
-
-            'monthly_fee'       => (float) ($calc['msf'] ?? 0),
-            'discount'          => (float) ($calc['discount'] ?? 0),
-            'addons_amount'     => (float) ($calc['addons_total'] ?? 0),
-
-            // change key depending on your computeFor() return
-            'credits_amount'    => (float) ($calc['credit_amount'] ?? $calc['outage_credit'] ?? 0),
-
-            'payments_amount'   => (float) ($calc['payments_total'] ?? 0),
-
-            'current_bill'      => (float) ($calc['current_bill'] ?? 0),
-            'total_due'         => (float) ($calc['total_due'] ?? 0),
+            'previous_balance' => (float) ($calc['previous_balance'] ?? 0),
+            'monthly_fee' => (float) ($calc['msf'] ?? 0),
+            'discount' => (float) ($calc['discount'] ?? 0),
+            'addons_amount' => (float) ($calc['addons_total'] ?? 0),
+            'credits_amount' => (float) ($calc['credit_amount'] ?? $calc['outage_credit'] ?? 0),
+            'payments_amount' => (float) ($calc['payments_total'] ?? 0),
+            'current_bill' => (float) ($calc['current_bill'] ?? 0),
+            'total_due' => (float) ($calc['total_due'] ?? 0),
         ];
-    })
-    // ->filter(fn ($row) => $row['total_due'] > 0)
-    ->values();
+    });
 
-    return response()->json($items);
+    return response()->json($subscriptions);
 }
 
 
@@ -84,7 +79,7 @@ class BillingController extends Controller
     public function soaJson(Request $request, Subscription $subscription, BillingService $billing)
     {
         $monthParam = $request->get('month', now()->startOfMonth()->toDateString());
-        $billMonth  = Carbon::parse($monthParam)->startOfMonth();
+        $billMonth = Carbon::parse($monthParam)->startOfMonth();
 
         $calc = $billing->computeFor(
             $subscription->load('subscriber', 'plan'),
@@ -92,19 +87,19 @@ class BillingController extends Controller
         );
 
         return response()->json([
-            'subscription_id'   => $subscription->id,
-            'subscriber'        => $subscription->subscriber?->name ?? '',
-            'subscriber_email'  => $subscription->subscriber?->email,
-            'plan'              => $subscription->plan?->name ?? '',
-            'billing_period'    => $billMonth->format('F Y'),
+            'subscription_id' => $subscription->id,
+            'subscriber' => $subscription->subscriber?->name ?? '',
+            'subscriber_email' => $subscription->subscriber?->email,
+            'plan' => $subscription->plan?->name ?? '',
+            'billing_period' => $billMonth->format('F Y'),
 
-            'previous_balance'  => (float) $calc['previous_balance'],
-            'base_amount'       => (float) ($calc['msf'] - $calc['discount']),
-            'addons_amount'     => (float) $calc['addons_total'],
-            'credits_amount'    => (float) $calc['outage_credit'],
-            'payments_amount'   => (float) $calc['payments_total'],
-            'current_bill'      => (float) $calc['current_bill'],
-            'total_due'         => (float) $calc['total_due'],
+            'previous_balance' => (float) $calc['previous_balance'],
+            'base_amount' => (float) ($calc['msf'] - $calc['discount']),
+            'addons_amount' => (float) $calc['addons_total'],
+            'credits_amount' => (float) $calc['outage_credit'],
+            'payments_amount' => (float) $calc['payments_total'],
+            'current_bill' => (float) $calc['current_bill'],
+            'total_due' => (float) $calc['total_due'],
         ]);
     }
 
@@ -115,7 +110,7 @@ class BillingController extends Controller
     public function soaPdf(Request $request, Subscription $subscription, BillingService $billing)
     {
         $monthParam = $request->get('month', now()->startOfMonth()->toDateString());
-        $billMonth  = Carbon::parse($monthParam)->startOfMonth();
+        $billMonth = Carbon::parse($monthParam)->startOfMonth();
 
         $calc = $billing->computeFor(
             $subscription->load('subscriber', 'plan'),
@@ -123,25 +118,25 @@ class BillingController extends Controller
         );
 
         $soa = [
-            'subscription'      => $subscription,
-            'subscriber'        => $subscription->subscriber,
-            'plan'              => $subscription->plan,
-            'billing_period'    => $billMonth,
-            'previous_balance'  => (float) $calc['previous_balance'],
-            'base_amount'       => (float) ($calc['msf'] - $calc['discount']),
-            'addons_amount'     => (float) $calc['addons_total'],
-            'credits_amount'    => (float) $calc['outage_credit'],
-            'payments_amount'   => (float) $calc['payments_total'],
-            'current_bill'      => (float) $calc['current_bill'],
-            'total_due'         => (float) $calc['total_due'],
-            'credits_days'      => (int) ($calc['credits_days'] ?? 0),
+            'subscription' => $subscription,
+            'subscriber' => $subscription->subscriber,
+            'plan' => $subscription->plan,
+            'billing_period' => $billMonth,
+            'previous_balance' => (float) $calc['previous_balance'],
+            'base_amount' => (float) ($calc['msf'] - $calc['discount']),
+            'addons_amount' => (float) $calc['addons_total'],
+            'credits_amount' => (float) $calc['outage_credit'],
+            'payments_amount' => (float) $calc['payments_total'],
+            'current_bill' => (float) $calc['current_bill'],
+            'total_due' => (float) $calc['total_due'],
+            'credits_days' => (int) ($calc['credits_days'] ?? 0),
         ];
 
         $pdf = Pdf::loadView('pdf.soa', [
             'subscription' => $subscription,
-            'soa'          => $soa,
-            'month'        => $billMonth,
-            'bill_no'      => $this->generateBillNo($subscription, $billMonth),
+            'soa' => $soa,
+            'month' => $billMonth,
+            'bill_no' => $this->generateBillNo($subscription, $billMonth),
         ])->setPaper('a4');
 
         return $pdf->download(
@@ -159,7 +154,7 @@ class BillingController extends Controller
         }
 
         $monthParam = $request->get('month', now()->startOfMonth()->toDateString());
-        $billMonth  = Carbon::parse($monthParam)->startOfMonth();
+        $billMonth = Carbon::parse($monthParam)->startOfMonth();
 
         $calc = $billing->computeFor(
             $subscription->load('subscriber', 'plan'),
@@ -167,23 +162,23 @@ class BillingController extends Controller
         );
 
         $soa = [
-            'subscription'      => $subscription,
-            'subscriber'        => $subscription->subscriber,
-            'plan'              => $subscription->plan,
-            'billing_period'    => $billMonth,
-            'previous_balance'  => (float) $calc['previous_balance'],
-            'base_amount'       => (float) ($calc['msf'] - $calc['discount']),
-            'addons_amount'     => (float) $calc['addons_total'],
-            'credits_amount'    => (float) $calc['outage_credit'],
-            'payments_amount'   => (float) $calc['payments_total'],
-            'current_bill'      => (float) $calc['current_bill'],
-            'total_due'         => (float) $calc['total_due'],
-            'credits_days'      => (int) ($calc['credits_days'] ?? 0),
+            'subscription' => $subscription,
+            'subscriber' => $subscription->subscriber,
+            'plan' => $subscription->plan,
+            'billing_period' => $billMonth,
+            'previous_balance' => (float) $calc['previous_balance'],
+            'base_amount' => (float) ($calc['msf'] - $calc['discount']),
+            'addons_amount' => (float) $calc['addons_total'],
+            'credits_amount' => (float) $calc['outage_credit'],
+            'payments_amount' => (float) $calc['payments_total'],
+            'current_bill' => (float) $calc['current_bill'],
+            'total_due' => (float) $calc['total_due'],
+            'credits_days' => (int) ($calc['credits_days'] ?? 0),
         ];
 
         $pdf = Pdf::loadView('pdf.soa', [
             'subscription' => $subscription,
-            'soa'          => $soa,
+            'soa' => $soa,
         ])->output();
 
         Mail::send('emails.soa', ['soa' => $soa], function ($message) use ($subscription, $pdf, $billMonth) {
