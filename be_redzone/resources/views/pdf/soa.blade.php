@@ -204,7 +204,12 @@
                     <p> TIN: 156-539-786-00000 / </p>
                     <p> &nbsp; &nbsp; &nbsp; &nbsp; 156-539-786-00001 </p>
                    </td>
-                <td>SOA No: {{ $subscription->id }}</td>
+                <td>
+                    <p>SOA No: {{ $subscription->id }}</p>
+                    <p>Date Printed: {{ \Carbon\Carbon::parse($printed_at)->format('F d, Y h:i A') }}</p>
+
+
+                </td>
             </tr>
         </table>
     </div>

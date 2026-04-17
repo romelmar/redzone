@@ -21,6 +21,7 @@ class SOAController extends Controller {
       'month' => $month,
       'billing' => $billing,
       'bill_no' => $month->format('Ym').'-'.$subscription->id,
+       'printed_at' => now(),
     ])->setPaper('a4');
 
     $filename = 'SOA-'.$subscription->id.'-'.$month->format('Y-m').'.pdf';
