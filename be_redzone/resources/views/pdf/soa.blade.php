@@ -206,7 +206,7 @@
                    </td>
                 <td>
                     <p>SOA No: {{ $subscription->id }}</p>
-                    <p>Date Printed: {{ \Carbon\Carbon::parse($printed_at)->format('F d, Y h:i A') }}</p>
+                    <!-- <p>Date Printed: {{ \Carbon\Carbon::parse($printed_at)->format('F d, Y h:i A') }}</p> -->
 
 
                 </td>
