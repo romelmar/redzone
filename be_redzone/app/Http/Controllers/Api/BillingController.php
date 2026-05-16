@@ -8,6 +8,7 @@ use App\Services\BillingService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 
 class BillingController extends Controller
@@ -109,6 +110,8 @@ class BillingController extends Controller
      */
     public function soaPdf(Request $request, Subscription $subscription, BillingService $billing)
     {
+
+    Log::info('on soa--------------------------------------');
         $monthParam = $request->get('month', now()->startOfMonth()->toDateString());
         $billMonth = Carbon::parse($monthParam)->startOfMonth();
 
@@ -137,6 +140,7 @@ class BillingController extends Controller
             'soa' => $soa,
             'month' => $billMonth,
             'bill_no' => $this->generateBillNo($subscription, $billMonth),
+            'printed_at' => now(),
         ])->setPaper('a4');
 
         return $pdf->download(
@@ -179,6 +183,7 @@ class BillingController extends Controller
         $pdf = Pdf::loadView('pdf.soa', [
             'subscription' => $subscription,
             'soa' => $soa,
+             'printed_at' => now(),
         ])->output();
 
         Mail::send('emails.soa', ['soa' => $soa], function ($message) use ($subscription, $pdf, $billMonth) {
