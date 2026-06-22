@@ -205,7 +205,6 @@
                     <p> &nbsp; &nbsp; &nbsp; &nbsp; 156-539-786-00001 </p>
                    </td>
                 <td>
-                    <p>SOA No: {{ $subscription->id }}</p>
                     <p>Date Printed: {{ \Carbon\Carbon::parse($printed_at)->format('F d, Y') }}</p>
 
 

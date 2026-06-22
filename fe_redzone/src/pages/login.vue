@@ -31,8 +31,9 @@ const handleLogin = async () => {
     toast.show('Login successful!', 'success')
 
   } catch (error) {
-    console.error(error.response.data.message)
-    toast.show('Login failed!', 'error')
+    const message = error?.response?.data?.message || error?.message || 'Login failed'
+    console.error(message)
+    toast.show('Login failed! ' + message, 'error')
   }
 }
 </script>

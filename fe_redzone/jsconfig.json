@@ -15,6 +15,7 @@
     "src/@iconify/*"
   ],
   "compilerOptions": {
+    "ignoreDeprecations": "6.0",
     "baseUrl": "./",
     "target": "esnext",
     "module": "esnext",

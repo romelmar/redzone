@@ -1,12 +1,13 @@
 <?php
 
 return [
-    'paths' => ['api/*', 'sanctum/csrf-cookie', 'login', 'logout', 'register'],
+    'paths' => ['api/*', 'sanctum/csrf-cookie', 'login', 'logout', 'register', '/'],
     'allowed_methods' => ['*'],
     'allowed_origins' => [
-        // 'http://localhost:5173',
-     'https://redzone.rosnel-partnership.com'
-     ], 
+        'http://localhost:5173',
+        'http://localhost:5174',
+        'https://redzone.rosnel-partnership.com',
+    ],
     'allowed_origins_patterns' => [],
     'allowed_headers' => ['*'],
     'exposed_headers' => [],

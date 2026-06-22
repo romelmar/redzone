@@ -1,10 +1,23 @@
 <?php
-// app/Console/Kernel.php
-use Illuminate\Console\Scheduling\Schedule;
 
-protected function schedule(Schedule $schedule)
+namespace App\Console;
+
+use Illuminate\Console\Scheduling\Schedule;
+use Illuminate\Foundation\Console\Kernel as ConsoleKernel;
+
+class Kernel extends ConsoleKernel
 {
-    $schedule->call(function () {
-        // Logic to check subscriptions due for payment and deduct automatically
-    })->daily();
+    protected function schedule(Schedule $schedule)
+    {
+        $schedule->call(function () {
+            // Logic to check subscriptions due for payment and deduct automatically
+        })->daily();
+    }
+
+    protected function commands()
+    {
+        $this->load(__DIR__ . '/Commands');
+
+        require base_path('routes/console.php');
+    }
 }
