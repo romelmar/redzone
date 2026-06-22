@@ -10,6 +10,9 @@ import {
 const loading = ref(false)
 const dialog = ref(false)
 const plans = ref([])
+const page = ref(1)
+const perPage = ref(10)
+const totalItems = ref(0)
 const sortBy = ref('name')
 const sortDir = ref('asc')
 
@@ -23,10 +26,14 @@ const form = ref({
 const load = async () => {
     loading.value = true
     const { data } = await fetchPlans({
+        page: page.value,
+        per_page: perPage.value,
         sort_by: sortBy.value,
         sort_dir: sortDir.value,
     })
-    plans.value = data.data ?? data
+
+    plans.value = data.data ?? []
+    totalItems.value = data.total ?? plans.value.length
     loading.value = false
 }
 
@@ -37,6 +44,7 @@ const setSort = (column) => {
         sortBy.value = column
         sortDir.value = 'asc'
     }
+    page.value = 1
     load()
 }
 
@@ -54,6 +62,8 @@ const openEdit = (plan) => {
     form.value = { ...plan }
     dialog.value = true
 }
+
+watch(page, load)
 
 const save = async () => {
     if (form.value.id) {
@@ -107,6 +117,33 @@ onMounted(load)
                     </tr>
                 </tbody>
             </VTable>
+
+            <div class="d-flex flex-column flex-sm-row align-center justify-space-between px-4 py-3 gap-3 mt-3">
+                <VPagination
+                    v-model="page"
+                    :length="Math.ceil(totalItems / perPage) || 1"
+                    @update:modelValue="load"
+                    :totalVisible="5"
+                    rounded="lg"
+                    variant="flat"
+                    color="primary"
+                    class="pagination-sneat"
+                />
+
+                <div class="d-flex align-center">
+                    <span class="me-2 text-body-2">Rows per page:</span>
+                    <VSelect
+                        v-model="perPage"
+                        :items="[10, 20, 50, 100]"
+                        density="comfortable"
+                        variant="outlined"
+                        hide-details
+                        class="sneat-rows-select"
+                        style="max-width: 110px"
+                        @update:modelValue="() => { page = 1; load() }"
+                    />
+                </div>
+            </div>
         </div>
     </div>
 

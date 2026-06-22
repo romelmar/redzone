@@ -19,49 +19,41 @@ public function computeFor(Subscription $sub, Carbon $billMonth): array
 {
     $billMonth = $billMonth->copy()->startOfMonth();
 
-    // ── Base values ───────────────────────────
     $planPrice = (float) ($sub->plan?->price ?? 0);
     $discount  = (float) ($sub->monthly_discount ?? 0);
 
-    // ── Add-ons (month-based) ─────────────────
-    $addonsTotal = (float) $sub->addons()
-        ->whereDate('credit_month', $billMonth)
+    $addons = $sub->relationLoaded('addons') ? $sub->addons : $sub->addons()->get();
+    $payments = $sub->relationLoaded('payments') ? $sub->payments : $sub->payments()->get();
+    $serviceCredits = $sub->relationLoaded('serviceCredits') ? $sub->serviceCredits : $sub->serviceCredits()->get();
+
+    $addonsTotal = (float) $addons
+        ->filter(fn ($addon) => Carbon::parse($addon->credit_month)->startOfMonth()->equalTo($billMonth))
         ->sum('amount');
 
-    // ── Service credits (ALL months ≤ bill month) ──
-    $creditDays = (int) $sub->serviceCredits()
-        ->whereDate('credit_month', '<=', $billMonth)
+    $creditDays = (int) $serviceCredits
+        ->filter(fn ($credit) => Carbon::parse($credit->credit_month)->startOfMonth()->lessThanOrEqualTo($billMonth))
         ->sum('outage_days');
 
     $daysInMonth  = $billMonth->daysInMonth;
     $creditAmount = round(($planPrice / $daysInMonth) * $creditDays, 2);
 
-    // ── Current bill ──────────────────────────
-    $currentBill = max(
-        0,
-        $planPrice - $discount + $addonsTotal
-    );
+    $currentBill = max(0, $planPrice - $discount + $addonsTotal);
 
-    // ── Charges BEFORE this month ─────────────
-    $prevCharges = (float) $this->lifetimeChargesUntil($sub, $billMonth);
+    $prevCharges = (float) $this->lifetimeChargesUntil($sub, $billMonth, $addons, $serviceCredits, $planPrice, $discount);
 
-    // ── Payments BEFORE this month ────────────
-    $prevPayments = (float) $sub->payments()
-        ->whereDate('payment_date', '<', $billMonth)
+    $prevPayments = (float) $payments
+        ->filter(fn ($payment) => Carbon::parse($payment->payment_date)->lt($billMonth))
         ->sum('amount');
 
-    // ── Previous balance ──────────────────────
     $previousBalance = round($prevCharges - $prevPayments, 2);
 
-    // ── Payments THIS month ───────────────────
-    $paymentsThisMonth = (float) $sub->payments()
-        ->whereBetween('payment_date', [
-            $billMonth,
-            $billMonth->copy()->endOfMonth(),
-        ])
+    $paymentsThisMonth = (float) $payments
+        ->filter(function ($payment) use ($billMonth) {
+            $date = Carbon::parse($payment->payment_date);
+            return $date->between($billMonth, $billMonth->copy()->endOfMonth());
+        })
         ->sum('amount');
 
-    // ── FINAL TOTAL DUE ───────────────────────
     $totalDue = max(
         0,
         round(
@@ -76,42 +68,46 @@ public function computeFor(Subscription $sub, Carbon $billMonth): array
         'previous_balance' => $previousBalance,
         'msf'              => $planPrice,
         'discount'         => $discount,
-
         'addons_total'     => $addonsTotal,
         'credit_days'      => $creditDays,
         'outage_credit'    => $creditAmount,
-
         'payments_total'   => $paymentsThisMonth,
-
         'current_bill'     => $currentBill,
         'total_due'        => $totalDue,
-
         'due_date'         => $sub->dueDateForMonth($billMonth),
     ];
 }
 
 
-
   // Sum of all monthly “MSF - discount + addons - outageCredit” up to but not including $untilMonth
-  protected function lifetimeChargesUntil(Subscription $sub, Carbon $untilMonth): float
+  protected function lifetimeChargesUntil(Subscription $sub, Carbon $untilMonth, $addons, $serviceCredits, float $planPrice, float $discount): float
   {
     $start = $sub->start_date->copy()->startOfMonth();
-    $end = $untilMonth->copy()->subMonth(); // last completed month before current
+    $end = $untilMonth->copy()->subMonth();
 
     if ($start->greaterThan($end)) return 0;
 
+    $addonTotals = $addons
+        ->groupBy(fn ($addon) => Carbon::parse($addon->credit_month)->startOfMonth()->toDateString())
+        ->map(fn ($group) => $group->sum('amount'));
+
+    $creditDaysTotals = $serviceCredits
+        ->groupBy(fn ($credit) => Carbon::parse($credit->credit_month)->startOfMonth()->toDateString())
+        ->map(fn ($group) => $group->sum('outage_days'));
+
     $sum = 0.0;
     $cursor = $start->copy();
-    while ($cursor->lessThanOrEqualTo($end)) {
-      $plan = $sub->plan->price;
-      $discount = $sub->monthly_discount;
-      $addons = $sub->addons()->whereDate('credit_month', $cursor)->sum('amount');
-      $outageDays = (int)$sub->serviceCredits()->whereDate('credit_month', $cursor)->sum('outage_days');
-      $outageCredit = round(($plan / $cursor->daysInMonth) * $outageDays, 2);
 
-      $sum += max(0, $plan - $discount + $addons - $outageCredit);
+    while ($cursor->lessThanOrEqualTo($end)) {
+      $monthKey = $cursor->toDateString();
+      $monthAddons = (float) ($addonTotals[$monthKey] ?? 0);
+      $monthOutageDays = (int) ($creditDaysTotals[$monthKey] ?? 0);
+      $outageCredit = round(($planPrice / $cursor->daysInMonth) * $monthOutageDays, 2);
+
+      $sum += max(0, $planPrice - $discount + $monthAddons - $outageCredit);
       $cursor->addMonth();
     }
+
     return round($sum, 2);
   }
 }

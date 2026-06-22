@@ -623,6 +623,7 @@ onMounted(async () => {
           v-model="page"
           :length="Math.ceil(totalItems / perPage) || 1"
           @update:modelValue="load"
+          :totalVisible="5"
           rounded="lg"
           variant="flat"
           color="primary"

@@ -13,12 +13,16 @@ class PlanController extends Controller
         $sortBy = $request->get('sort_by', 'name');
         $sortDir = strtolower($request->get('sort_dir', 'asc')) === 'asc' ? 'asc' : 'desc';
         $allowed = ['name', 'price', 'description', 'created_at'];
+        $perPage = (int) $request->get('per_page', 10);
 
         if (!in_array($sortBy, $allowed, true)) {
             $sortBy = 'name';
         }
 
-        return response()->json(Plan::orderBy($sortBy, $sortDir)->get());
+        return response()->json(
+            Plan::orderBy($sortBy, $sortDir)
+                ->paginate(max(1, $perPage))
+        );
     }
 
     public function store(Request $request)

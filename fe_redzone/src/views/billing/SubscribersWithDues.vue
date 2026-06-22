@@ -55,6 +55,8 @@ watch(month, () => {
   load()
 })
 
+watch(page, load)
+
 const setSort = (column) => {
   if (sortBy.value === column) {
     sortDir.value = sortDir.value === 'asc' ? 'desc' : 'asc'
@@ -221,8 +223,7 @@ onMounted(load)
           v-model="page"
           :length="Math.ceil(totalItems / perPage) || 1"
           @update:modelValue="load"
-          rounded="lg"
-          variant="flat"
+          totalVisible="5"
           color="primary"
           class="pagination-sneat"
         />

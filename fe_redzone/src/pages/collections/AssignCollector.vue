@@ -315,7 +315,7 @@ onMounted(async () => {
 
             <div class="d-flex flex-column flex-sm-row align-center justify-space-between px-4 py-3 gap-3">
                 <VPagination v-model="page" :length="Math.ceil(totalItems / perPage)"
-                    @update:modelValue="loadAssignments" rounded="lg" variant="flat" color="primary"
+                    @update:modelValue="loadAssignments" :totalVisible="5" rounded="lg" variant="flat" color="primary"
                     class="pagination-sneat" />
 
                 <div class="d-flex align-center">
