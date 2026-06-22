@@ -22,114 +22,111 @@ public function collectionSheet(Request $request, BillingService $billing)
     $assignmentStatus = $request->get('assignment_status');
     $perPage = (int) $request->get('per_page', 10);
     $page = (int) $request->get('page', 1);
+        $sortBy = $request->get('sort_by', 'assignment_date');
+        $sortDir = strtolower($request->get('sort_dir', 'asc')) === 'asc' ? 'asc' : 'desc';
 
-    $assignmentDateCarbon = \Carbon\Carbon::parse($assignmentDate);
-    $billMonth = $assignmentDateCarbon->copy()->startOfMonth();
+        $assignmentDateCarbon = \Carbon\Carbon::parse($assignmentDate);
+        $billMonth = $assignmentDateCarbon->copy()->startOfMonth();
 
-    $subscriptions = \App\Models\Subscription::query()
-        ->with([
-            'subscriber',
-            'plan',
-            'addons',
-            'payments',
-            'serviceCredits',
-            'collectionAssignments' => function ($q) use ($assignmentDate) {
-                $q->whereDate('assignment_date', $assignmentDate);
-            },
-        ])
-        ->when($search !== '', function ($q) use ($search) {
-            $q->where(function ($qq) use ($search) {
-                $qq->whereHas('subscriber', function ($s) use ($search) {
-                    $s->where('name', 'like', "%{$search}%")
-                        ->orWhere('email', 'like', "%{$search}%")
-                        ->orWhere('phone', 'like', "%{$search}%")
-                        ->orWhere('address', 'like', "%{$search}%");
-                })->orWhereHas('plan', function ($p) use ($search) {
-                    $p->where('name', 'like', "%{$search}%");
+        $subscriptions = \App\Models\Subscription::query()
+            ->with([
+                'subscriber',
+                'plan',
+                'addons',
+                'payments',
+                'serviceCredits',
+                'collectionAssignments' => function ($q) use ($assignmentDate) {
+                    $q->whereDate('assignment_date', $assignmentDate);
+                },
+            ])
+            ->when($search !== '', function ($q) use ($search) {
+                $q->where(function ($qq) use ($search) {
+                    $qq->whereHas('subscriber', function ($s) use ($search) {
+                        $s->where('name', 'like', "%{$search}%")
+                            ->orWhere('email', 'like', "%{$search}%")
+                            ->orWhere('phone', 'like', "%{$search}%")
+                            ->orWhere('address', 'like', "%{$search}%");
+                    })->orWhereHas('plan', function ($p) use ($search) {
+                        $p->where('name', 'like', "%{$search}%");
+                    });
                 });
-            });
-        })
-        ->get();
+            })
+            ->get();
 
-    $rows = $subscriptions->map(function ($sub) use ($billing, $billMonth, $assignmentDateCarbon) {
-        $calc = $billing->computeFor($sub, $billMonth);
+        $rows = $subscriptions->map(function ($sub) use ($billing, $billMonth, $assignmentDateCarbon) {
+            $calc = $billing->computeFor($sub, $billMonth);
 
-        $dueDate = $sub->dueDateForMonth($billMonth);
+            $dueDate = $sub->dueDateForMonth($billMonth);
 
-        $daysOverdue = $assignmentDateCarbon->startOfDay()->gt($dueDate->copy()->startOfDay())
-            ? $dueDate->diffInDays($assignmentDateCarbon)
-            : 0;
+            $daysOverdue = $assignmentDateCarbon->startOfDay()->gt($dueDate->copy()->startOfDay())
+                ? $dueDate->diffInDays($assignmentDateCarbon)
+                : 0;
 
-        $collectionType = 'due';
+            $collectionType = 'due';
 
-        if (!$sub->active) {
-            $collectionType = 'disconnected';
-        } elseif ($daysOverdue > 0) {
-            $collectionType = 'overdue';
+            if (!$sub->active) {
+                $collectionType = 'disconnected';
+            } elseif ($daysOverdue > 0) {
+                $collectionType = 'overdue';
+            }
+
+            $assignment = $sub->collectionAssignments->first();
+
+            return [
+                'subscription_id'    => $sub->id,
+                'assignment_id'      => $assignment?->id,
+                'assignment_date'    => $assignment?->assignment_date?->toDateString(),
+                'collector_name'     => $assignment?->collector_name,
+                'notes'              => $assignment?->notes,
+                'assignment_status'  => $assignment ? 'assigned' : 'unassigned',
+
+                'subscriber_name'    => $sub->subscriber?->name,
+                'subscriber_email'   => $sub->subscriber?->email,
+                'subscriber_phone'   => $sub->subscriber?->phone,
+                'subscriber_address' => $sub->subscriber?->address,
+
+                'plan_name'          => $sub->plan?->name,
+                'plan_speed'         => $sub->plan?->speed,
+
+                'due_date'           => $dueDate?->toDateString(),
+                'days_overdue'       => $daysOverdue,
+                'collection_type'    => $collectionType,
+                'active'             => (bool) $sub->active,
+
+                'previous_balance'   => (float) ($calc['previous_balance'] ?? 0),
+                'current_bill'       => (float) ($calc['current_bill'] ?? 0),
+                'total_due'          => (float) ($calc['total_due'] ?? 0),
+            ];
+        });
+
+        if ($type === 'due') {
+            $rows = $rows->filter(fn ($r) =>
+                $r['collection_type'] === 'due' && $r['total_due'] > 0
+            );
+        } elseif ($type === 'overdue') {
+            $rows = $rows->filter(fn ($r) =>
+                $r['collection_type'] === 'overdue' && $r['total_due'] > 0
+            );
+        } elseif ($type === 'disconnected') {
+            $rows = $rows->filter(fn ($r) =>
+                $r['collection_type'] === 'disconnected'
+            );
         }
 
-        $assignment = $sub->collectionAssignments->first();
+        if ($collectorName !== '') {
+            $rows = $rows->filter(fn ($r) =>
+                str_contains(strtolower($r['collector_name'] ?? ''), strtolower($collectorName))
+            );
+        }
 
-        return [
-            'subscription_id'    => $sub->id,
-            'assignment_id'      => $assignment?->id,
-            'assignment_date'    => $assignment?->assignment_date?->toDateString(),
-            'collector_name'     => $assignment?->collector_name,
-            'notes'              => $assignment?->notes,
-            'assignment_status'  => $assignment ? 'assigned' : 'unassigned',
+        if ($assignmentStatus === 'assigned') {
+            $rows = $rows->filter(fn ($r) => $r['assignment_status'] === 'assigned');
+        } elseif ($assignmentStatus === 'unassigned') {
+            $rows = $rows->filter(fn ($r) => $r['assignment_status'] === 'unassigned');
+        }
 
-            'subscriber_name'    => $sub->subscriber?->name,
-            'subscriber_email'   => $sub->subscriber?->email,
-            'subscriber_phone'   => $sub->subscriber?->phone,
-            'subscriber_address' => $sub->subscriber?->address,
-
-            'plan_name'          => $sub->plan?->name,
-            'plan_speed'         => $sub->plan?->speed,
-
-            'due_date'           => $dueDate?->toDateString(),
-            'days_overdue'       => $daysOverdue,
-            'collection_type'    => $collectionType,
-            'active'             => (bool) $sub->active,
-
-            'previous_balance'   => (float) ($calc['previous_balance'] ?? 0),
-            'current_bill'       => (float) ($calc['current_bill'] ?? 0),
-            'total_due'          => (float) ($calc['total_due'] ?? 0),
-        ];
-    });
-
-    if ($type === 'due') {
-        $rows = $rows->filter(fn ($r) =>
-            $r['collection_type'] === 'due' && $r['total_due'] > 0
-        );
-    } elseif ($type === 'overdue') {
-        $rows = $rows->filter(fn ($r) =>
-            $r['collection_type'] === 'overdue' && $r['total_due'] > 0
-        );
-    } elseif ($type === 'disconnected') {
-        $rows = $rows->filter(fn ($r) =>
-            $r['collection_type'] === 'disconnected'
-        );
-    }
-
-    if ($collectorName !== '') {
-        $rows = $rows->filter(fn ($r) =>
-            str_contains(strtolower($r['collector_name'] ?? ''), strtolower($collectorName))
-        );
-    }
-
-    if ($assignmentStatus === 'assigned') {
-        $rows = $rows->filter(fn ($r) => $r['assignment_status'] === 'assigned');
-    } elseif ($assignmentStatus === 'unassigned') {
-        $rows = $rows->filter(fn ($r) => $r['assignment_status'] === 'unassigned');
-    }
-
-    $rows = $rows->values();
-
-    $total = $rows->count();
-
-    $paginatedRows = $rows
-        ->slice(($page - 1) * $perPage, $perPage)
-        ->values();
+        if (in_array($sortBy, ['assignment_date', 'collector_name', 'subscriber_name', 'plan_name', 'due_date', 'days_overdue', 'assignment_status', 'total_due'], true)) {
+            $rows = $sortDir === 'asc' ? $rows->sortBy($sortBy) : $rows->sortByDesc($sortBy);
 
     return response()->json([
         'data' => $paginatedRows,

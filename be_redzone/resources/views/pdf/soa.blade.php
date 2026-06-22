@@ -303,11 +303,11 @@
         <table>
             <tr>
                 <td><strong>Bill Number:</strong></td>
-                <td>{{ $subscription->id }}</td>
+                <td>{{ $bill_no }}</td>
             </tr>
             <tr>
                 <td><strong>Bill Period:</strong></td>
-                <td>{{ now()->startOfMonth()->format('M d, Y') }} - {{ now()->endOfMonth()->format('M d, Y') }}</td>
+                <td>{{ $period_start->format('M d, Y') }} - {{ $period_end->format('M d, Y') }}</td>
             </tr>
             <tr>
                 <td><strong>Account No:</strong></td>

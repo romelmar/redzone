@@ -21,6 +21,8 @@ public function index(Request $request)
 {
     $search = $request->get('search');
     $perPage = $request->get('per_page', 20);
+    $sortBy = $request->get('sort_by', 'name');
+    $sortDir = strtolower($request->get('sort_dir', 'asc')) === 'asc' ? 'asc' : 'desc';
 
     $query = Subscriber::query();
 
@@ -32,10 +34,17 @@ public function index(Request $request)
         });
     }
 
-    $subscribers = $query
-        ->withCount('subscriptions')
-        ->orderBy('name')
-        ->paginate($perPage);
+    $query->withCount('subscriptions');
+
+    if (in_array($sortBy, ['name', 'email', 'phone', 'account_number'], true)) {
+        $query->orderBy($sortBy, $sortDir);
+    } elseif ($sortBy === 'subscriptions_count') {
+        $query->orderBy('subscriptions_count', $sortDir);
+    } else {
+        $query->orderBy('name', $sortDir);
+    }
+
+    $subscribers = $query->paginate($perPage);
 
     return response()->json($subscribers);
 }
@@ -58,7 +67,7 @@ public function search(Request $request)
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:subscribers,email,',
             'phone' => 'nullable|string|max:50',
-            'account_number' => 'nullable|string|max:50',
+            'account_number' => 'nullable|integer',
             'address' => 'nullable|string',
         ]);
 
@@ -79,7 +88,7 @@ public function search(Request $request)
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:subscribers,email,' . $subscriber->id,
             'phone' => 'nullable|string|max:50',
-            'account_number' => 'nullable|string|max:50',
+            'account_number' => 'nullable|integer',
             'address' => 'nullable|string',
         ]);
 

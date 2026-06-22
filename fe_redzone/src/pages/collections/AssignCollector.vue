@@ -21,6 +21,8 @@ const subscriptions = ref([])
 const page = ref(1)
 const perPage = ref(10)
 const totalItems = ref(0)
+const sortBy = ref('assignment_date')
+const sortDir = ref('asc')
 
 const search = ref("")
 const assignmentDateFilter = ref(new Date().toISOString().slice(0, 10))
@@ -140,6 +142,8 @@ const loadAssignments = async () => {
             per_page: perPage.value,
             assignment_date: assignmentDateFilter.value || undefined,
             collector_name: collectorFilter.value || undefined,
+            sort_by: sortBy.value,
+            sort_dir: sortDir.value,
         })
 
         assignments.value = data.data ?? []
@@ -164,6 +168,22 @@ const loadSubscriptions = async () => {
     })
 
     subscriptions.value = data.data ?? data
+}
+
+const setSort = (column) => {
+    if (sortBy.value === column) {
+        sortDir.value = sortDir.value === 'asc' ? 'desc' : 'asc'
+    } else {
+        sortBy.value = column
+        sortDir.value = 'asc'
+    }
+    page.value = 1
+    loadAssignments()
+}
+
+const sortIcon = (column) => {
+    if (sortBy.value !== column) return 'mdi-swap-vertical'
+    return sortDir.value === 'asc' ? 'mdi-arrow-up' : 'mdi-arrow-down'
 }
 
 const debouncedReload = debounce(() => {
@@ -255,9 +275,9 @@ onMounted(async () => {
                             <VCheckbox :model-value="allVisibleSelected" @update:model-value="toggleSelectAll"
                                 hide-details density="compact" />
                         </th>
-                        <th>Date</th>
-                        <th>Collector</th>
-                        <th>Subscriber</th>
+                        <th @click="setSort('assignment_date')" class="sortable-header">Date <VIcon size="16" class="ms-1">{{ sortIcon('assignment_date') }}</VIcon></th>
+                        <th @click="setSort('collector_name')" class="sortable-header">Collector <VIcon size="16" class="ms-1">{{ sortIcon('collector_name') }}</VIcon></th>
+                        <th @click="setSort('subscriber_name')" class="sortable-header">Subscriber <VIcon size="16" class="ms-1">{{ sortIcon('subscriber_name') }}</VIcon></th>
                         <th>Plan</th>
                         <th>Notes</th>
                         <th class="text-end">Actions</th>

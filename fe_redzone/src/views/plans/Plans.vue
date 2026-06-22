@@ -10,6 +10,8 @@ import {
 const loading = ref(false)
 const dialog = ref(false)
 const plans = ref([])
+const sortBy = ref('name')
+const sortDir = ref('asc')
 
 const form = ref({
     id: null,
@@ -20,9 +22,27 @@ const form = ref({
 
 const load = async () => {
     loading.value = true
-    const { data } = await fetchPlans()
+    const { data } = await fetchPlans({
+        sort_by: sortBy.value,
+        sort_dir: sortDir.value,
+    })
     plans.value = data.data ?? data
     loading.value = false
+}
+
+const setSort = (column) => {
+    if (sortBy.value === column) {
+        sortDir.value = sortDir.value === 'asc' ? 'desc' : 'asc'
+    } else {
+        sortBy.value = column
+        sortDir.value = 'asc'
+    }
+    load()
+}
+
+const sortIcon = (column) => {
+    if (sortBy.value !== column) return 'mdi-swap-vertical'
+    return sortDir.value === 'asc' ? 'mdi-arrow-up' : 'mdi-arrow-down'
 }
 
 const openCreate = () => {
@@ -66,8 +86,8 @@ onMounted(load)
             <VTable>
                 <thead>
                     <tr>
-                        <th>Name</th>
-                        <th>Price</th>
+                        <th @click="setSort('name')" class="sortable-header">Name <VIcon size="16" class="ms-1">{{ sortIcon('name') }}</VIcon></th>
+                        <th @click="setSort('price')" class="sortable-header">Price <VIcon size="16" class="ms-1">{{ sortIcon('price') }}</VIcon></th>
                         <th>Description</th>
                         <th class="text-end">Actions</th>
                     </tr>

@@ -53,6 +53,14 @@ class CollectionRouteController extends Controller
             ];
         })->filter()->values();
 
+        $sortBy = $request->get('sort_by', 'subscriber_name');
+        $sortDir = strtolower($request->get('sort_dir', 'asc')) === 'asc' ? 'asc' : 'desc';
+
+        if (in_array($sortBy, ['subscriber_name', 'plan', 'amount_due', 'collector'], true)) {
+            $rows = $sortDir === 'asc' ? $rows->sortBy($sortBy) : $rows->sortByDesc($sortBy);
+            $rows = $rows->values();
+        }
+
         return response()->json($rows);
     }
 

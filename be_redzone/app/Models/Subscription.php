@@ -64,6 +64,39 @@ class Subscription extends Model
         return (clone $month)->day($day); // $month is first-of-month
     }
 
+    public function billingPeriodStartForMonth(Carbon $month): Carbon
+    {
+        $day = min((int) $this->start_date->day, $month->daysInMonth);
+        return $month->copy()->day($day);
+    }
+
+    public function billingPeriodEndForMonth(Carbon $month): Carbon
+    {
+        return $this->billingPeriodStartForMonth($month)->copy()->addMonth()->subDay();
+    }
+
+    public function billingPeriodForMonth(Carbon $month): array
+    {
+        $start = $this->billingPeriodStartForMonth($month);
+
+        return [
+            'start' => $start,
+            'end' => $start->copy()->addMonth()->subDay(),
+        ];
+    }
+
+    public function billingMonthCount(Carbon $month): int
+    {
+        $start = $this->start_date->copy()->startOfMonth();
+        $current = $month->copy()->startOfMonth();
+
+        if ($current->lt($start)) {
+            return 0;
+        }
+
+        return $start->diffInMonths($current) + 1;
+    }
+
     public function discount()
     {
         return $this->hasOne(Discount::class);

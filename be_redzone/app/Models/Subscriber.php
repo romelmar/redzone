@@ -9,6 +9,9 @@ use Illuminate\Database\Eloquent\Model;
 class Subscriber extends Model
 {
     protected $fillable = ['name', 'email', 'account_number', 'phone', 'address'];
+    protected $casts = [
+        'account_number' => 'integer',
+    ];
 
     public function subscriptions()
     {

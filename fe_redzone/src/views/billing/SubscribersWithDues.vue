@@ -12,6 +12,8 @@ const dues = ref([])
 const page = ref(1)
 const perPage = ref(10)
 const totalItems = ref(0)
+const sortBy = ref('subscriber')
+const sortDir = ref('asc')
 
 const search = ref("")
 const month = ref(new Date().toISOString().slice(0, 10).replace(/\d{2}$/, "01"))
@@ -27,6 +29,10 @@ const load = async () => {
         per_page: perPage.value,
         search: search.value || undefined,
         month: month.value || undefined,
+        sort_by: sortBy.value,
+        sort_dir: sortDir.value,
+        sort_by: sortBy.value,
+        sort_dir: sortDir.value,
       },
     })
 
@@ -48,6 +54,22 @@ watch(month, () => {
   page.value = 1
   load()
 })
+
+const setSort = (column) => {
+  if (sortBy.value === column) {
+    sortDir.value = sortDir.value === 'asc' ? 'desc' : 'asc'
+  } else {
+    sortBy.value = column
+    sortDir.value = 'asc'
+  }
+  page.value = 1
+  load()
+}
+
+const sortIcon = (column) => {
+  if (sortBy.value !== column) return 'mdi-swap-vertical'
+  return sortDir.value === 'asc' ? 'mdi-arrow-up' : 'mdi-arrow-down'
+}
 
 const downloadSOA = async (subscriptionId) => {
   downloadingId.value = subscriptionId
@@ -124,15 +146,15 @@ onMounted(load)
       <VTable>
         <thead>
           <tr>
-            <th>Subscriber</th>
-            <th>Plan</th>
-            <th>Billing Period</th>
-            <th>Previous Balance</th>
-            <th>Monthly Fee</th>
+            <th @click="setSort('subscriber')" class="sortable-header">Subscriber <VIcon size="16" class="ms-1">{{ sortIcon('subscriber') }}</VIcon></th>
+            <th @click="setSort('plan')" class="sortable-header">Plan <VIcon size="16" class="ms-1">{{ sortIcon('plan') }}</VIcon></th>
+            <th @click="setSort('billing_period')" class="sortable-header">Billing Period <VIcon size="16" class="ms-1">{{ sortIcon('billing_period') }}</VIcon></th>
+            <th @click="setSort('previous_balance')" class="sortable-header">Previous Balance <VIcon size="16" class="ms-1">{{ sortIcon('previous_balance') }}</VIcon></th>
+            <th @click="setSort('monthly_fee')" class="sortable-header">Monthly Fee <VIcon size="16" class="ms-1">{{ sortIcon('monthly_fee') }}</VIcon></th>
             <th>Add-ons</th>
             <th>Credits</th>
             <th>Payments</th>
-            <th>Total Due</th>
+            <th @click="setSort('total_due')" class="sortable-header">Total Due <VIcon size="16" class="ms-1">{{ sortIcon('total_due') }}</VIcon></th>
             <th class="text-end">Actions</th>
           </tr>
         </thead>

@@ -11,9 +11,12 @@ class AddonController extends Controller
     public function index(Request $request)
     {
         $perPage = (int) $request->get('per_page', 10);
+        $sortBy = $request->get('sort_by', 'credit_month');
+        $sortDir = strtolower($request->get('sort_dir', 'desc')) === 'asc' ? 'asc' : 'desc';
 
         $query = Addon::query()
-            ->with(['subscription.subscriber', 'subscription.plan']);
+            ->with(['subscription.subscriber', 'subscription.plan'])
+            ->select('addons.*');
 
         if ($request->filled('subscription_id')) {
             $query->where('subscription_id', $request->subscription_id);
@@ -39,8 +42,22 @@ class AddonController extends Controller
             });
         }
 
+        if ($sortBy === 'subscription_name') {
+            $query->leftJoin('subscriptions', 'addons.subscription_id', '=', 'subscriptions.id')
+                ->leftJoin('subscribers', 'subscriptions.subscriber_id', '=', 'subscribers.id')
+                ->orderBy('subscribers.name', $sortDir);
+        } elseif ($sortBy === 'plan_name') {
+            $query->leftJoin('subscriptions', 'addons.subscription_id', '=', 'subscriptions.id')
+                ->leftJoin('plans', 'subscriptions.plan_id', '=', 'plans.id')
+                ->orderBy('plans.name', $sortDir);
+        } elseif (in_array($sortBy, ['name', 'amount', 'credit_month'], true)) {
+            $query->orderBy($sortBy, $sortDir);
+        } else {
+            $query->latest('credit_month');
+        }
+
         return response()->json(
-            $query->latest('credit_month')->paginate($perPage)
+            $query->paginate($perPage)
         );
     }
 

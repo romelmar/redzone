@@ -15,6 +15,8 @@ const dialog = ref(false)
 const addons = ref([])
 const subscriptions = ref([])
 const subscriptionSearch = ref('')
+const sortBy = ref('credit_month')
+const sortDir = ref('desc')
 
 const form = ref({
   id: null,
@@ -25,11 +27,30 @@ const form = ref({
   credit_month: '',
 })
 
+const setSort = (column) => {
+  if (sortBy.value === column) {
+    sortDir.value = sortDir.value === 'asc' ? 'desc' : 'asc'
+  } else {
+    sortBy.value = column
+    sortDir.value = 'asc'
+  }
+  load()
+}
+
+const sortIcon = (column) => {
+  if (sortBy.value !== column) return 'mdi-swap-vertical'
+  return sortDir.value === 'asc' ? 'mdi-arrow-up' : 'mdi-arrow-down'
+}
+
 const load = async () => {
   loading.value = true
   try {
     const [addonsRes, subsRes] = await Promise.all([
-      fetchAddons(),
+      fetchAddons({
+        per_page: 10,
+        sort_by: sortBy.value,
+        sort_dir: sortDir.value,
+      }),
       fetchSubscriptions({
         per_page: 10,
         sort_by: 'subscriber_name',
@@ -165,11 +186,31 @@ onMounted(load)
       <VTable>
         <thead>
           <tr>
-            <th>Subscription</th>
-            <th>Name</th>
+            <th @click="setSort('subscription_name')" class="sortable-header">
+              <div class="d-flex align-center">
+                Subscription
+                <VIcon size="16" class="ms-1">{{ sortIcon('subscription_name') }}</VIcon>
+              </div>
+            </th>
+            <th @click="setSort('name')" class="sortable-header">
+              <div class="d-flex align-center">
+                Name
+                <VIcon size="16" class="ms-1">{{ sortIcon('name') }}</VIcon>
+              </div>
+            </th>
             <th>Description</th>
-            <th>Amount</th>
-            <th>Bill Month</th>
+            <th @click="setSort('amount')" class="sortable-header">
+              <div class="d-flex align-center">
+                Amount
+                <VIcon size="16" class="ms-1">{{ sortIcon('amount') }}</VIcon>
+              </div>
+            </th>
+            <th @click="setSort('credit_month')" class="sortable-header">
+              <div class="d-flex align-center">
+                Bill Month
+                <VIcon size="16" class="ms-1">{{ sortIcon('credit_month') }}</VIcon>
+              </div>
+            </th>
             <th class="text-end">Actions</th>
           </tr>
         </thead>
@@ -272,3 +313,14 @@ onMounted(load)
     </VCard>
   </VDialog>
 </template>
+
+<style scoped>
+.sortable-header {
+  cursor: pointer;
+  user-select: none;
+}
+
+.sortable-header .v-icon {
+  opacity: 0.6;
+}
+</style>

@@ -16,12 +16,15 @@ class SoaMail extends Mailable {
 
   public function build() {
     $billing = app(BillingService::class)->computeFor($this->subscription, $this->month);
+    $billingPeriod = $this->subscription->billingPeriodForMonth($this->month);
 
     $pdf = Pdf::loadView('pdf.soa', [
       'subscription' => $this->subscription->load('subscriber','plan'),
       'month' => $this->month,
       'billing' => $billing,
-      'bill_no' => $this->month->format('Ym').'-'.$this->subscription->id,
+      'bill_no' => $this->subscription->billingMonthCount($this->month),
+      'period_start' => $billingPeriod['start'],
+      'period_end' => $billingPeriod['end'],
     ])->setPaper('a4');
 
     $filename = 'SOA-'.$this->subscription->id.'-'.$this->month->format('Y-m').'.pdf';

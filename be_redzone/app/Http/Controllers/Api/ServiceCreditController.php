@@ -12,13 +12,28 @@ class ServiceCreditController extends Controller
 {
     public function index(Request $request)
     {
-        $query = ServiceCredit::query()->with('subscription.subscriber');
+        $sortBy = $request->get('sort_by', 'credit_month');
+        $sortDir = strtolower($request->get('sort_dir', 'desc')) === 'asc' ? 'asc' : 'desc';
+
+        $query = ServiceCredit::query()
+            ->with('subscription.subscriber')
+            ->select('service_credits.*');
 
         if ($request->filled('subscription_id')) {
             $query->where('subscription_id', $request->subscription_id);
         }
 
-        return $query->latest()->paginate(20);
+        if ($sortBy === 'subscription_name') {
+            $query->leftJoin('subscriptions', 'service_credits.subscription_id', '=', 'subscriptions.id')
+                ->leftJoin('subscribers', 'subscriptions.subscriber_id', '=', 'subscribers.id')
+                ->orderBy('subscribers.name', $sortDir);
+        } elseif (in_array($sortBy, ['credit_month', 'outage_days', 'reason'], true)) {
+            $query->orderBy($sortBy, $sortDir);
+        } else {
+            $query->orderBy('credit_month', $sortDir);
+        }
+
+        return $query->paginate(20);
     }
 
     public function store(Request $request)

@@ -10,7 +10,13 @@ class CollectionAssignmentController extends Controller
 {
     public function index(Request $request)
     {
-        $query = CollectionAssignment::with(['subscription.subscriber', 'subscription.plan']);
+        $perPage = $request->get('per_page', 10);
+        $sortBy = $request->get('sort_by', 'assignment_date');
+        $sortDir = strtolower($request->get('sort_dir', 'asc')) === 'asc' ? 'asc' : 'desc';
+
+        $query = CollectionAssignment::query()
+            ->with(['subscription.subscriber', 'subscription.plan'])
+            ->select('collection_assignments.*');
 
         if ($request->filled('assignment_date')) {
             $query->whereDate('assignment_date', $request->assignment_date);
@@ -20,8 +26,22 @@ class CollectionAssignmentController extends Controller
             $query->where('collector_name', $request->collector_name);
         }
 
+        if ($sortBy === 'subscription_name') {
+            $query->leftJoin('subscriptions', 'collection_assignments.subscription_id', '=', 'subscriptions.id')
+                ->leftJoin('subscribers', 'subscriptions.subscriber_id', '=', 'subscribers.id')
+                ->orderBy('subscribers.name', $sortDir);
+        } elseif ($sortBy === 'plan_name') {
+            $query->leftJoin('subscriptions', 'collection_assignments.subscription_id', '=', 'subscriptions.id')
+                ->leftJoin('plans', 'subscriptions.plan_id', '=', 'plans.id')
+                ->orderBy('plans.name', $sortDir);
+        } elseif (in_array($sortBy, ['assignment_date', 'collector_name'], true)) {
+            $query->orderBy($sortBy, $sortDir);
+        } else {
+            $query->orderBy('assignment_date', $sortDir);
+        }
+
         return response()->json(
-            $query->latest()->paginate($request->get('per_page', 10))
+            $query->paginate($perPage)
         );
     }
 

@@ -42,6 +42,9 @@ const onSearch = debounce(async query => {
     searchLoading.value = false;
 }, 300);
 
+const sortBy = ref('name');
+const sortDir = ref('asc');
+
 // Load table from API
 const load = async () => {
     loading.value = true;
@@ -50,14 +53,13 @@ const load = async () => {
         page: page.value,
         per_page: perPage.value,
         search: tableSearch.value,
+        sort_by: sortBy.value,
+        sort_dir: sortDir.value,
     });
 
     subscribers.value = data.data;
     totalItems.value = data.total;
-
     loading.value = false;
-
-    console.log("Loaded subscribers:", data);
 };
 
 // When selecting an autocomplete result
@@ -93,6 +95,22 @@ const form = ref({
     phone: "",
     address: "",
 });
+
+const setSort = (column) => {
+    if (sortBy.value === column) {
+        sortDir.value = sortDir.value === 'asc' ? 'desc' : 'asc'
+    } else {
+        sortBy.value = column
+        sortDir.value = 'asc'
+    }
+    page.value = 1
+    load()
+}
+
+const sortIcon = (column) => {
+    if (sortBy.value !== column) return 'mdi-swap-vertical'
+    return sortDir.value === 'asc' ? 'mdi-arrow-up' : 'mdi-arrow-down'
+}
 
 // Reset form after dialog close
 watch(dialog, isOpen => {
@@ -198,11 +216,11 @@ onMounted(load);
             <VTable>
                 <thead>
                     <tr>
-                        <th>Name</th>
-                        <th>Account Number</th>
-                        <th>Email</th>
-                        <th>Phone</th>
-                        <th>Subscriptions</th>
+                        <th @click="setSort('name')" class="sortable-header">Name <VIcon size="16" class="ms-1">{{ sortIcon('name') }}</VIcon></th>
+                        <th @click="setSort('account_number')" class="sortable-header">Account Number <VIcon size="16" class="ms-1">{{ sortIcon('account_number') }}</VIcon></th>
+                        <th @click="setSort('email')" class="sortable-header">Email <VIcon size="16" class="ms-1">{{ sortIcon('email') }}</VIcon></th>
+                        <th @click="setSort('phone')" class="sortable-header">Phone <VIcon size="16" class="ms-1">{{ sortIcon('phone') }}</VIcon></th>
+                        <th @click="setSort('subscriptions_count')" class="sortable-header">Subscriptions <VIcon size="16" class="ms-1">{{ sortIcon('subscriptions_count') }}</VIcon></th>
                         <th class="text-end">Actions</th>
                     </tr>
                 </thead>
@@ -227,7 +245,7 @@ onMounted(load);
                     </tr>
 
                     <tr v-if="!loading && subscribers.length === 0">
-                        <td colspan="5" class="text-center text-muted py-4">
+                        <td colspan="6" class="text-center text-muted py-4">
                             No subscribers found
                         </td>
                     </tr>
@@ -286,7 +304,7 @@ onMounted(load);
                     </VCol>
 
                     <VCol cols="12">
-                        <VTextField label="Account Number" v-model="form.account_number" />
+                        <VTextField label="Account Number" type="number" v-model.number="form.account_number" />
                     </VCol>
 
                     <VCol cols="12">

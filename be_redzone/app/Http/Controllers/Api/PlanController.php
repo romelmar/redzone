@@ -8,9 +8,17 @@ use Illuminate\Http\Request;
 
 class PlanController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        return response()->json(Plan::latest()->get());
+        $sortBy = $request->get('sort_by', 'name');
+        $sortDir = strtolower($request->get('sort_dir', 'asc')) === 'asc' ? 'asc' : 'desc';
+        $allowed = ['name', 'price', 'description', 'created_at'];
+
+        if (!in_array($sortBy, $allowed, true)) {
+            $sortBy = 'name';
+        }
+
+        return response()->json(Plan::orderBy($sortBy, $sortDir)->get());
     }
 
     public function store(Request $request)

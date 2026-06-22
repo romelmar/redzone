@@ -7,6 +7,8 @@ const rows = ref([])
 
 const assignmentDate = ref(new Date().toISOString().slice(0,10))
 const collectorName = ref("")
+const sortBy = ref('subscriber_name')
+const sortDir = ref('asc')
 
 const load = async () => {
 
@@ -15,13 +17,30 @@ const load = async () => {
   const res = await api.get("/api/collection-route",{
     params:{
       assignment_date: assignmentDate.value,
-      collector_name: collectorName.value
+      collector_name: collectorName.value,
+      sort_by: sortBy.value,
+      sort_dir: sortDir.value,
     }
   })
 
   rows.value = res.data
 
   loading.value = false
+}
+
+const setSort = (column) => {
+  if (sortBy.value === column) {
+    sortDir.value = sortDir.value === 'asc' ? 'desc' : 'asc'
+  } else {
+    sortBy.value = column
+    sortDir.value = 'asc'
+  }
+  load()
+}
+
+const sortIcon = (column) => {
+  if (sortBy.value !== column) return 'mdi-swap-vertical'
+  return sortDir.value === 'asc' ? 'mdi-arrow-up' : 'mdi-arrow-down'
 }
 
 const downloadPdf = async () => {
@@ -47,6 +66,17 @@ const downloadPdf = async () => {
 
 onMounted(load)
 </script>
+
+<style scoped>
+.sortable-header {
+  cursor: pointer;
+  user-select: none;
+}
+
+.sortable-header .v-icon {
+  opacity: 0.6;
+}
+</style>
 
 <template>
 
@@ -95,9 +125,9 @@ Export PDF
 
 <tr>
 <th>#</th>
-<th>Subscriber</th>
-<th>Plan</th>
-<th>Amount Due</th>
+<th @click="setSort('subscriber_name')" class="sortable-header">Subscriber <VIcon size="16" class="ms-1">{{ sortIcon('subscriber_name') }}</VIcon></th>
+<th @click="setSort('plan')" class="sortable-header">Plan <VIcon size="16" class="ms-1">{{ sortIcon('plan') }}</VIcon></th>
+<th @click="setSort('amount_due')" class="sortable-header">Amount Due <VIcon size="16" class="ms-1">{{ sortIcon('amount_due') }}</VIcon></th>
 <th>Phone</th>
 <th>Address</th>
 <th>Notes</th>

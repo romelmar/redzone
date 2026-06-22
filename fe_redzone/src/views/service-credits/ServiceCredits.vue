@@ -13,6 +13,8 @@ const dialog = ref(false)
 
 const credits = ref([])
 const subscriptions = ref([])
+const sortBy = ref('credit_month')
+const sortDir = ref('desc')
 
 const form = ref({
     id: null,
@@ -25,7 +27,7 @@ const form = ref({
 const load = async () => {
     loading.value = true
     const [credRes, subsRes] = await Promise.all([
-        fetchServiceCredits(),
+        fetchServiceCredits({ sort_by: sortBy.value, sort_dir: sortDir.value }),
         fetchSubscriptions(),
     ])
     credits.value = credRes.data.data ?? credRes.data
@@ -71,6 +73,21 @@ const subscriptionLabel = (c) => {
     return `${sub.subscriber?.name ?? ''} - ${sub.plan?.name ?? ''}`
 }
 
+const setSort = (column) => {
+    if (sortBy.value === column) {
+        sortDir.value = sortDir.value === 'asc' ? 'desc' : 'asc'
+    } else {
+        sortBy.value = column
+        sortDir.value = 'asc'
+    }
+    load()
+}
+
+const sortIcon = (column) => {
+    if (sortBy.value !== column) return 'mdi-swap-vertical'
+    return sortDir.value === 'asc' ? 'mdi-arrow-up' : 'mdi-arrow-down'
+}
+
 onMounted(load)
 </script>
 
@@ -87,10 +104,10 @@ onMounted(load)
             <VTable>
                 <thead>
                     <tr>
-                        <th>Subscription</th>
-                        <th>Bill Month</th>
-                        <th>Outage Days</th>
-                        <th>Reason</th>
+                        <th @click="setSort('subscription_name')" class="sortable-header">Subscription <VIcon size="16" class="ms-1">{{ sortIcon('subscription_name') }}</VIcon></th>
+                        <th @click="setSort('credit_month')" class="sortable-header">Bill Month <VIcon size="16" class="ms-1">{{ sortIcon('credit_month') }}</VIcon></th>
+                        <th @click="setSort('outage_days')" class="sortable-header">Outage Days <VIcon size="16" class="ms-1">{{ sortIcon('outage_days') }}</VIcon></th>
+                        <th @click="setSort('reason')" class="sortable-header">Reason <VIcon size="16" class="ms-1">{{ sortIcon('reason') }}</VIcon></th>
                         <th class="text-end">Actions</th>
                     </tr>
                 </thead>

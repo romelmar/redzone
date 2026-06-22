@@ -27,6 +27,8 @@ const subscriptions = ref([])
 const page = ref(1)
 const perPage = ref(10)
 const totalItems = ref(0)
+const sortBy = ref('payment_date')
+const sortDir = ref('desc')
 
 const search = ref("")
 const paymentTypeFilter = ref(null)
@@ -75,6 +77,8 @@ const load = async () => {
       payment_type: paymentTypeFilter.value || undefined,
       date_from: dateFrom.value || undefined,
       date_to: dateTo.value || undefined,
+      sort_by: sortBy.value,
+      sort_dir: sortDir.value,
     })
 
     payments.value =
@@ -117,6 +121,22 @@ const loadSubscriptionOptions = async (searchValue = "") => {
 | DEBOUNCE
 |--------------------------------------------------------------------------
 */
+const setSort = (column) => {
+  if (sortBy.value === column) {
+    sortDir.value = sortDir.value === 'asc' ? 'desc' : 'asc'
+  } else {
+    sortBy.value = column
+    sortDir.value = 'asc'
+  }
+  page.value = 1
+  load()
+}
+
+const sortIcon = (column) => {
+  if (sortBy.value !== column) return 'mdi-swap-vertical'
+  return sortDir.value === 'asc' ? 'mdi-arrow-up' : 'mdi-arrow-down'
+}
+
 const debouncedLoad = debounce(() => {
   page.value = 1
   load()
@@ -274,10 +294,10 @@ onMounted(() => {
       <VTable>
         <thead>
           <tr>
-            <th>Subscription</th>
-            <th>Amount</th>
-            <th>Paid At</th>
-            <th>Payment Type</th>
+            <th @click="setSort('subscriber_name')" class="sortable-header">Subscription <VIcon size="16" class="ms-1">{{ sortIcon('subscriber_name') }}</VIcon></th>
+            <th @click="setSort('amount')" class="sortable-header">Amount <VIcon size="16" class="ms-1">{{ sortIcon('amount') }}</VIcon></th>
+            <th @click="setSort('payment_date')" class="sortable-header">Paid At <VIcon size="16" class="ms-1">{{ sortIcon('payment_date') }}</VIcon></th>
+            <th @click="setSort('payment_type')" class="sortable-header">Payment Type <VIcon size="16" class="ms-1">{{ sortIcon('payment_type') }}</VIcon></th>
             <th>Remarks</th>
             <th class="text-end">Actions</th>
           </tr>

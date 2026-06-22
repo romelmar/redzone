@@ -53,8 +53,27 @@ class PaymentController extends Controller
             });
         }
 
+        $sortBy = $request->get('sort_by', 'payment_date');
+        $sortDir = strtolower($request->get('sort_dir', 'desc')) === 'asc' ? 'asc' : 'desc';
+
+        if ($sortBy === 'subscriber_name') {
+            $query->leftJoin('subscriptions', 'payments.subscription_id', '=', 'subscriptions.id')
+                ->leftJoin('subscribers', 'subscriptions.subscriber_id', '=', 'subscribers.id')
+                ->orderBy('subscribers.name', $sortDir)
+                ->select('payments.*');
+        } elseif ($sortBy === 'plan_name') {
+            $query->leftJoin('subscriptions', 'payments.subscription_id', '=', 'subscriptions.id')
+                ->leftJoin('plans', 'subscriptions.plan_id', '=', 'plans.id')
+                ->orderBy('plans.name', $sortDir)
+                ->select('payments.*');
+        } elseif (in_array($sortBy, ['payment_date', 'amount', 'payment_type'], true)) {
+            $query->orderBy($sortBy, $sortDir);
+        } else {
+            $query->orderBy('payment_date', $sortDir);
+        }
+
         return response()->json(
-            $query->latest('payment_date')->paginate($perPage)
+            $query->paginate($perPage)
         );
     }
 
