@@ -186,7 +186,7 @@
                 <div class="highlight">{{ config('app.name', 'Redzone Wireless Internet Services') }}</div>
                 <div>Brgy. Poblacion, Leon, Iloilo</div>
                 <div>Email: leauncesan@yahoo.com</div>
-                <div>Contact: +63 912 345 6789</div>
+                <div>Contact: +63 930 211 4082</div>
             </td>
         </tr>
     </table>
@@ -311,7 +311,7 @@
             </tr>
             <tr>
                 <td><strong>Account No:</strong></td>
-                <td>{{ str_pad($subscription->id, 4, '0', STR_PAD_LEFT) }}</td>
+                <td>{{ $subscription->subscriber->id}}</td>
             </tr>
 
 

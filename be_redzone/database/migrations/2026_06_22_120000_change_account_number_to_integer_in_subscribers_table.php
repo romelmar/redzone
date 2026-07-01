@@ -12,9 +12,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        if (Schema::hasColumn('subscribers', 'account_number')) {
-            DB::statement('ALTER TABLE subscribers MODIFY account_number BIGINT UNSIGNED NULL');
-        }
+        // This migration is intentionally left empty.
+        // We keep account_number as a string and use account_number_int for numeric use cases.
     }
 
     /**
@@ -22,8 +21,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        if (Schema::hasColumn('subscribers', 'account_number')) {
-            DB::statement('ALTER TABLE subscribers MODIFY account_number VARCHAR(50) NULL');
-        }
+        // No changes were applied in up().
     }
 };
