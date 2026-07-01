@@ -90,7 +90,6 @@ watch(tableSearch, () => {
 const form = ref({
     id: null,
     name: "",
-    account_number: "",
     email: "",
     phone: "",
     address: "",
@@ -118,7 +117,6 @@ watch(dialog, isOpen => {
         form.value = {
             id: null,
             name: "",
-            account_number: "",
             email: "",
             phone: "",
             address: "",
@@ -145,7 +143,6 @@ const openCreate = () => {
     form.value = {
         id: null,
         name: "",
-        account_number: "",
         email: "",
         phone: "",
         address: "",
@@ -155,7 +152,9 @@ const openCreate = () => {
 
 const openEdit = async id => {
     const { data } = await showSubscriber(id);
-    form.value = { ...data };
+    // Exclude account_number when loading into the edit form
+    const { account_number, ...rest } = data || {};
+    form.value = { ...rest };
     dialog.value = true;
 };
 
@@ -218,7 +217,6 @@ onMounted(load);
                     <tr>
                         <th class="text-nowrap">ID</th>
                         <th @click="setSort('name')" class="sortable-header">Name <VIcon size="16" class="ms-1">{{ sortIcon('name') }}</VIcon></th>
-                        <th @click="setSort('account_number')" class="sortable-header">Account Number <VIcon size="16" class="ms-1">{{ sortIcon('account_number') }}</VIcon></th>
                         <th @click="setSort('email')" class="sortable-header">Email <VIcon size="16" class="ms-1">{{ sortIcon('email') }}</VIcon></th>
                         <th @click="setSort('phone')" class="sortable-header">Phone <VIcon size="16" class="ms-1">{{ sortIcon('phone') }}</VIcon></th>
                         <th @click="setSort('subscriptions_count')" class="sortable-header">Subscriptions <VIcon size="16" class="ms-1">{{ sortIcon('subscriptions_count') }}</VIcon></th>
@@ -230,7 +228,6 @@ onMounted(load);
                     <tr v-for="s in subscribers" :key="s.id">
                         <td>{{ s.id }}</td>
                         <td>{{ s.name }}</td>
-                        <td>{{ s.account_number }}</td>
                         <td>{{ s.email }}</td>
                         <td>{{ s.phone }}</td>
                         <td>{{ s.subscriptions_count }}</td>
@@ -247,7 +244,7 @@ onMounted(load);
                     </tr>
 
                     <tr v-if="!loading && subscribers.length === 0">
-                        <td colspan="7" class="text-center text-muted py-4">
+                        <td colspan="6" class="text-center text-muted py-4">
                             No subscribers found
                         </td>
                     </tr>
@@ -306,9 +303,6 @@ onMounted(load);
                         <VTextField label="Name" v-model="form.name" />
                     </VCol>
 
-                    <VCol cols="12">
-                        <VTextField label="Account Number" type="number" v-model.number="form.account_number" />
-                    </VCol>
 
                     <VCol cols="12">
                         <VTextField label="Email" type="email" v-model="form.email" />
