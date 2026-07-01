@@ -1,13 +1,5 @@
-import axios from 'axios'
 import { defineStore } from 'pinia'
-
-// axios.defaults.baseURL = 'http://localhost:8000'
-axios.defaults.baseURL = import.meta.env.VITE_API_URL
-
-axios.defaults.withCredentials = true
-axios.defaults.withXSRFToken = true
-
-
+import api from '@/plugins/axios'
 
 export const useAuthStore = defineStore('auth', {
   state: () => ({
@@ -24,7 +16,7 @@ export const useAuthStore = defineStore('auth', {
     async getUser() {
       try {
         this.loading = true
-        const response = await axios.get('/api/user')
+        const response = await api.get('/api/user')
         this.user = response.data
       } catch (error) {
         this.user = null
@@ -38,8 +30,8 @@ export const useAuthStore = defineStore('auth', {
       try {
         this.loading = true
 
-        await axios.get('/sanctum/csrf-cookie')
-        await axios.post('/login', credentials)
+        await api.get('/sanctum/csrf-cookie')
+        await api.post('/login', credentials)
 
         await this.getUser()
       } finally {
@@ -50,7 +42,7 @@ export const useAuthStore = defineStore('auth', {
     async logout() {
       try {
         this.loading = true
-        await axios.post('/logout')
+        await api.post('/logout')
         this.user = null
       } finally {
         this.loading = false
@@ -60,8 +52,8 @@ export const useAuthStore = defineStore('auth', {
     async register(payload) {
       try {
         this.loading = true
-        await axios.get('/sanctum/csrf-cookie')
-        await axios.post('/register', payload)
+        await api.get('/sanctum/csrf-cookie')
+        await api.post('/register', payload)
       } finally {
         this.loading = false
       }

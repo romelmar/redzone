@@ -216,6 +216,7 @@ onMounted(load);
             <VTable>
                 <thead>
                     <tr>
+                        <th class="text-nowrap">ID</th>
                         <th @click="setSort('name')" class="sortable-header">Name <VIcon size="16" class="ms-1">{{ sortIcon('name') }}</VIcon></th>
                         <th @click="setSort('account_number')" class="sortable-header">Account Number <VIcon size="16" class="ms-1">{{ sortIcon('account_number') }}</VIcon></th>
                         <th @click="setSort('email')" class="sortable-header">Email <VIcon size="16" class="ms-1">{{ sortIcon('email') }}</VIcon></th>
@@ -227,6 +228,7 @@ onMounted(load);
 
                 <tbody>
                     <tr v-for="s in subscribers" :key="s.id">
+                        <td>{{ s.id }}</td>
                         <td>{{ s.name }}</td>
                         <td>{{ s.account_number }}</td>
                         <td>{{ s.email }}</td>
@@ -245,7 +247,7 @@ onMounted(load);
                     </tr>
 
                     <tr v-if="!loading && subscribers.length === 0">
-                        <td colspan="6" class="text-center text-muted py-4">
+                        <td colspan="7" class="text-center text-muted py-4">
                             No subscribers found
                         </td>
                     </tr>

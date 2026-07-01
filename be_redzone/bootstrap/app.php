@@ -15,6 +15,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->statefulApi();
         $middleware->prepend(EnsureCorsCredentials::class);
+        $middleware->validateCsrfTokens(except: ['login', 'logout', 'register', 'sanctum/csrf-cookie']);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //
