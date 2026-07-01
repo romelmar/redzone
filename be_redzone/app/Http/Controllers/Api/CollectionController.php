@@ -127,7 +127,7 @@ public function collectionSheet(Request $request, BillingService $billing)
 
         if (in_array($sortBy, ['assignment_date', 'collector_name', 'subscriber_name', 'plan_name', 'due_date', 'days_overdue', 'assignment_status', 'total_due'], true)) {
             $rows = $sortDir === 'asc' ? $rows->sortBy($sortBy) : $rows->sortByDesc($sortBy);
-
+        }
     return response()->json([
         'data' => $paginatedRows,
         'total' => $total,
