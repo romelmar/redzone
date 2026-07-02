@@ -28,6 +28,14 @@ Route::middleware(['auth:sanctum'])->get('/user', function (Request $request) {
 // Route::post('/login', [AuthenticatedSessionController::class, 'store']);
 // Route::post('/register', [RegisteredUserController::class, 'store']);
 
+Route::post('/auth/login', [AuthenticatedSessionController::class, 'store']);
+Route::post('/auth/logout', [AuthenticatedSessionController::class, 'destroy'])
+    ->middleware('auth:sanctum');
+
+Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
+    return $request->user();
+});
+
 Route::get('/subscribers', [SubscriberController::class, 'getSubscribers']);
 Route::get('/subscribers/search', [SubscriberController::class, 'search']);
 Route::get('/subscribers-with-dues', [SubscriberController::class, 'getSubscribersWithDues']);
