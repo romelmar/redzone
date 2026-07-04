@@ -36,7 +36,7 @@ public function index(Request $request)
 
     $query->withCount('subscriptions');
 
-    if (in_array($sortBy, ['name', 'email', 'phone', 'account_number'], true)) {
+    if (in_array($sortBy, ['name', 'email', 'phone'], true)) {
         $query->orderBy($sortBy, $sortDir);
     } elseif ($sortBy === 'subscriptions_count') {
         $query->orderBy('subscriptions_count', $sortDir);
@@ -67,7 +67,6 @@ public function search(Request $request)
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:subscribers,email,',
             'phone' => 'nullable|string|max:50',
-            'account_number' => 'nullable|integer',
             'address' => 'nullable|string',
         ]);
 
@@ -88,7 +87,6 @@ public function search(Request $request)
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:subscribers,email,' . $subscriber->id,
             'phone' => 'nullable|string|max:50',
-            'account_number' => 'nullable|integer',
             'address' => 'nullable|string',
         ]);
 
