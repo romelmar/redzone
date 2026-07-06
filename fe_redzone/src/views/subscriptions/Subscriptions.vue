@@ -1,7 +1,7 @@
 <script setup>
-import { ref, onMounted, watch, computed } from "vue"
-import axios from "axios"
-import { formatIsoToReadable } from "@/helpers/dateUtils"
+import { ref, onMounted, watch, computed } from "vue";
+import axios from "axios";
+import { formatIsoToReadable } from "@/helpers/dateUtils";
 
 import {
   fetchSubscriptions,
@@ -10,55 +10,55 @@ import {
   deleteSubscription,
   activateSubscription,
   deactivateSubscription,
-} from "@/services/subscriptions"
+} from "@/services/subscriptions";
 
-import { fetchSubscribers, searchSubscribers } from "@/services/subscribers"
-import { fetchPlans } from "@/services/plans"
+import { fetchSubscribers, searchSubscribers } from "@/services/subscribers";
+import { fetchPlanOptions } from "@/services/plans";
 
-import debounce from "lodash/debounce"
+import debounce from "lodash/debounce";
 
 // ─────────────────────────────────────────────
 // STATE
 // ─────────────────────────────────────────────
-const loading = ref(false)
-const dialog = ref(false)
+const loading = ref(false);
+const dialog = ref(false);
 
-const subscriptions = ref([])
+const subscriptions = ref([]);
 
-const page = ref(1)
-const perPage = ref(10)
-const totalItems = ref(0)
+const page = ref(1);
+const perPage = ref(10);
+const totalItems = ref(0);
 
 // filters & search (table)
-const search = ref("")
-const activeFilter = ref(null) // null | 'active' | 'suspended' | 'inactive'
-const planFilter = ref(null) // plan_id
+const search = ref("");
+const activeFilter = ref(null); // null | 'active' | 'suspended' | 'inactive'
+const planFilter = ref(null); // plan_id
 
 // sorting
-const sortBy = ref("start_date")
-const sortDir = ref("desc") // 'asc' | 'desc'
+const sortBy = ref("start_date");
+const sortDir = ref("desc"); // 'asc' | 'desc'
 
 // dropdown data
-const subscribers = ref([])
-const plans = ref([])
+const subscribers = ref([]);
+const plans = ref([]);
 
 // bulk selection
-const selectedIds = ref([])
+const selectedIds = ref([]);
 
 // dialogs for extra features
-const billingDialog = ref(false)
-const billingLoading = ref(false)
-const billingData = ref(null)
+const billingDialog = ref(false);
+const billingLoading = ref(false);
+const billingData = ref(null);
 
-const historyDialog = ref(false)
-const historyLoading = ref(false)
-const historyEvents = ref([])
+const historyDialog = ref(false);
+const historyLoading = ref(false);
+const historyEvents = ref([]);
 
 // Autocomplete (dialog)
-const searchText = ref("")
-const selectedSubscriber = ref(null)
-const searchResults = ref([])
-const searchLoading = ref(false)
+const searchText = ref("");
+const selectedSubscriber = ref(null);
+const searchResults = ref([]);
+const searchLoading = ref(false);
 
 // form
 const form = ref({
@@ -70,7 +70,7 @@ const form = ref({
   monthly_discount: 0,
   active: true,
   collector_name: "",
-})
+});
 
 // ─────────────────────────────────────────────
 // HELPERS
@@ -80,72 +80,72 @@ const statusOptions = [
   { label: "Active", value: "active" },
   { label: "Suspended", value: "suspended" },
   { label: "Inactive", value: "inactive" },
-]
+];
 
 const statusColor = (status) => {
   switch (status) {
     case "active":
-      return "success"
+      return "success";
     case "suspended":
-      return "warning"
+      return "warning";
     case "inactive":
-      return "secondary"
+      return "secondary";
     default:
-      return "secondary"
+      return "secondary";
   }
-}
+};
 
-const formatCurrency = (amount) => `₱${Number(amount ?? 0).toFixed(2)}`
+const formatCurrency = (amount) => `₱${Number(amount ?? 0).toFixed(2)}`;
 
 // Normalize status (backend may send status or active boolean)
 const getStatus = (s) => {
-  if (s?.status) return s.status
-  if (typeof s?.active === "boolean") return s.active ? "active" : "inactive"
-  return "inactive"
-}
+  if (s?.status) return s.status;
+  if (typeof s?.active === "boolean") return s.active ? "active" : "inactive";
+  return "inactive";
+};
 
 // extract rows safely from paginated or plain API responses
 const extractRows = (payload) => {
-  if (Array.isArray(payload)) return payload
-  if (Array.isArray(payload?.data)) return payload.data
-  if (Array.isArray(payload?.data?.data)) return payload.data.data
-  return []
-}
+  if (Array.isArray(payload)) return payload;
+  if (Array.isArray(payload?.data)) return payload.data;
+  if (Array.isArray(payload?.data?.data)) return payload.data.data;
+  return [];
+};
 
 // Bulk selection helpers
 const allVisibleSelected = computed(
   () =>
     subscriptions.value.length > 0 &&
     subscriptions.value.every((s) => selectedIds.value.includes(s.id)),
-)
+);
 
 const toggleSelectAll = () => {
   selectedIds.value = allVisibleSelected.value
     ? []
-    : subscriptions.value.map((s) => s.id)
-}
+    : subscriptions.value.map((s) => s.id);
+};
 
 // Sorting
 const setSort = (column) => {
   if (sortBy.value === column) {
-    sortDir.value = sortDir.value === "asc" ? "desc" : "asc"
+    sortDir.value = sortDir.value === "asc" ? "desc" : "asc";
   } else {
-    sortBy.value = column
-    sortDir.value = "asc"
+    sortBy.value = column;
+    sortDir.value = "asc";
   }
-  load()
-}
+  load();
+};
 
 const sortIcon = (column) => {
-  if (sortBy.value !== column) return "mdi-swap-vertical"
-  return sortDir.value === "asc" ? "mdi-arrow-up" : "mdi-arrow-down"
-}
+  if (sortBy.value !== column) return "mdi-swap-vertical";
+  return sortDir.value === "asc" ? "mdi-arrow-up" : "mdi-arrow-down";
+};
 
 // ─────────────────────────────────────────────
 // LOAD TABLE (server-side pagination + search + filters + sort)
 // ─────────────────────────────────────────────
 const load = async () => {
-  loading.value = true
+  loading.value = true;
   try {
     const { data } = await fetchSubscriptions({
       page: page.value,
@@ -155,26 +155,26 @@ const load = async () => {
       plan_id: planFilter.value || undefined,
       sort_by: sortBy.value,
       sort_dir: sortDir.value,
-    })
+    });
 
-    const rows = data?.data?.data ?? data?.data ?? []
-    const total = data?.data?.total ?? data?.total ?? 0
+    const rows = data?.data?.data ?? data?.data ?? [];
+    const total = data?.data?.total ?? data?.total ?? 0;
 
-    subscriptions.value = rows
-    totalItems.value = total
-    selectedIds.value = []
+    subscriptions.value = rows;
+    totalItems.value = total;
+    selectedIds.value = [];
   } finally {
-    loading.value = false
+    loading.value = false;
   }
-}
+};
 
-const debouncedLoad = debounce(load, 400)
+const debouncedLoad = debounce(load, 400);
 
 // react to search/filter changes
 watch([search, activeFilter, planFilter], () => {
-  page.value = 1
-  debouncedLoad()
-})
+  page.value = 1;
+  debouncedLoad();
+});
 
 // ─────────────────────────────────────────────
 // DROPDOWNS FOR FORM FILTERS
@@ -186,11 +186,10 @@ const loadDropdowns = async () => {
       sort_by: "name",
       sort_dir: "asc",
     }),
-    fetchPlans(),
-  ])
+    fetchPlanOptions(),
+  ]);
 
-  const subscriberRows = extractRows(subsRes.data)
-  const planRows = extractRows(plansRes.data)
+  const subscriberRows = extractRows(subsRes.data);
 
   subscribers.value = subscriberRows.map((s) => ({
     id: s.id,
@@ -198,55 +197,56 @@ const loadDropdowns = async () => {
     email: s.email,
     phone: s.phone,
     address: s.address,
-  }))
+  }));
 
-  plans.value = planRows.map((p) => ({
+  plans.value = plansRes.data.map((p) => ({
     id: p.id,
-    name: p.name,
-    speed: p.speed,
+    name: p.title,
+    subtitle: p.subtitle,
     price: p.price,
-  }))
-}
+    speed: p.speed,
+  }));
+};
 
 // ─────────────────────────────────────────────
 // AUTOCOMPLETE REMOTE SEARCH (dialog)
 // ─────────────────────────────────────────────
 const onSearch = debounce(async (query) => {
-  const q = (query ?? "").trim()
+  const q = (query ?? "").trim();
 
   if (!q) {
-    searchResults.value = subscribers.value
-    return
+    searchResults.value = subscribers.value;
+    return;
   }
 
-  searchLoading.value = true
+  searchLoading.value = true;
   try {
-    const res = await searchSubscribers(q)
+    const res = await searchSubscribers(q);
     searchResults.value = extractRows(res.data).map((s) => ({
       id: s.id,
       name: s.name,
       email: s.email,
       phone: s.phone,
       address: s.address,
-    }))
+    }));
   } finally {
-    searchLoading.value = false
+    searchLoading.value = false;
   }
-}, 300)
+}, 300);
 
 const onPickSubscriber = (subscriber) => {
-  selectedSubscriber.value = subscriber || null
-  form.value.subscriber_id = subscriber?.id ?? null
-  searchText.value = subscriber?.name ?? ""
-}
+  selectedSubscriber.value = subscriber || null;
+  form.value.subscriber_id = subscriber?.id ?? null;
+  searchText.value = subscriber?.name ?? "";
+};
 
 // ─────────────────────────────────────────────
 // CRUD
 // ─────────────────────────────────────────────
 const openCreate = () => {
-  selectedSubscriber.value = null
-  searchText.value = ""
-  searchResults.value = [...subscribers.value]
+  selectedSubscriber.value = null;
+  searchText.value = "";
+  searchResults.value = [...subscribers.value];
 
   form.value = {
     id: null,
@@ -257,19 +257,20 @@ const openCreate = () => {
     monthly_discount: 0,
     active: true,
     collector_name: "",
-  }
-  dialog.value = true
-}
+  };
+  dialog.value = true;
+};
 
 const openEdit = (s) => {
-  const status = getStatus(s)
+  const status = getStatus(s);
 
-  const found = subscribers.value.find((x) => x.id === s.subscriber_id)
+  const found = subscribers.value.find((x) => x.id === s.subscriber_id);
   selectedSubscriber.value =
-    found ?? (s.subscriber ? { id: s.subscriber_id, name: s.subscriber.name } : null)
+    found ??
+    (s.subscriber ? { id: s.subscriber_id, name: s.subscriber.name } : null);
 
-  searchText.value = selectedSubscriber.value?.name ?? ""
-  searchResults.value = [...subscribers.value]
+  searchText.value = selectedSubscriber.value?.name ?? "";
+  searchResults.value = [...subscribers.value];
 
   form.value = {
     id: s.id,
@@ -280,140 +281,148 @@ const openEdit = (s) => {
     monthly_discount: s.monthly_discount ?? 0,
     active: status === "active",
     collector_name: s.collector_name ?? "",
-  }
+  };
 
-  dialog.value = true
-}
+  dialog.value = true;
+};
 
 const save = async () => {
   if (!form.value.subscriber_id) {
-    alert("Please select a subscriber.")
-    return
+    alert("Please select a subscriber.");
+    return;
   }
   if (!form.value.plan_id) {
-    alert("Please select a plan.")
-    return
+    alert("Please select a plan.");
+    return;
   }
 
-  const payload = { ...form.value }
-  payload.status = form.value.active ? "active" : "inactive"
+  const payload = { ...form.value };
+  payload.status = form.value.active ? "active" : "inactive";
 
   if (form.value.id) {
-    await updateSubscription(form.value.id, payload)
+    await updateSubscription(form.value.id, payload);
   } else {
-    await createSubscription(payload)
+    await createSubscription(payload);
   }
 
-  dialog.value = false
-  load()
-}
+  dialog.value = false;
+  load();
+};
 
 const remove = async (s) => {
-  const name = s.subscriber?.name ?? "this subscriber"
-  if (!confirm(`Delete subscription for ${name}?`)) return
-  await deleteSubscription(s.id)
-  load()
-}
+  const name = s.subscriber?.name ?? "this subscriber";
+  if (!confirm(`Delete subscription for ${name}?`)) return;
+  await deleteSubscription(s.id);
+  load();
+};
 
 // ─────────────────────────────────────────────
 // BULK ACTIONS
 // ─────────────────────────────────────────────
 const bulkUpdateStatus = async (status) => {
-  if (!selectedIds.value.length) return
-  if (!confirm(`Set ${selectedIds.value.length} subscription(s) to "${status}"?`)) return
+  if (!selectedIds.value.length) return;
+  if (
+    !confirm(`Set ${selectedIds.value.length} subscription(s) to "${status}"?`)
+  )
+    return;
 
-  await Promise.all(selectedIds.value.map((id) => updateSubscription(id, { status })))
-  load()
-}
+  await Promise.all(
+    selectedIds.value.map((id) => updateSubscription(id, { status })),
+  );
+  load();
+};
 
 const bulkDelete = async () => {
-  if (!selectedIds.value.length) return
-  if (!confirm(`Delete ${selectedIds.value.length} subscription(s)?`)) return
+  if (!selectedIds.value.length) return;
+  if (!confirm(`Delete ${selectedIds.value.length} subscription(s)?`)) return;
 
-  await Promise.all(selectedIds.value.map((id) => deleteSubscription(id)))
-  load()
-}
+  await Promise.all(selectedIds.value.map((id) => deleteSubscription(id)));
+  load();
+};
 
 // ─────────────────────────────────────────────
 // BILLING PREVIEW (SOA JSON)
 // ─────────────────────────────────────────────
 const openBillingPreview = async (s) => {
-  billingDialog.value = true
-  billingLoading.value = true
-  billingData.value = null
+  billingDialog.value = true;
+  billingLoading.value = true;
+  billingData.value = null;
 
   try {
-    const { data } = await axios.get(`/api/subscriptions/${s.id}/soa-json`)
-    billingData.value = data
+    const { data } = await axios.get(`/api/subscriptions/${s.id}/soa-json`);
+    billingData.value = data;
   } finally {
-    billingLoading.value = false
+    billingLoading.value = false;
   }
-}
+};
 
 // ─────────────────────────────────────────────
 // HISTORY TIMELINE
 // ─────────────────────────────────────────────
 const openHistory = async (s) => {
-  historyDialog.value = true
-  historyLoading.value = true
-  historyEvents.value = []
+  historyDialog.value = true;
+  historyLoading.value = true;
+  historyEvents.value = [];
 
   try {
-    const { data } = await axios.get(`/api/subscriptions/${s.id}/history`)
-    historyEvents.value = data
+    const { data } = await axios.get(`/api/subscriptions/${s.id}/history`);
+    historyEvents.value = data;
   } finally {
-    historyLoading.value = false
+    historyLoading.value = false;
   }
-}
+};
 
 // ─────────────────────────────────────────────
 // ACTIVATION / DEACTIVATION ENDPOINTS
 // ─────────────────────────────────────────────
 const activate = async (s) => {
   try {
-    await activateSubscription(s.id)
-    load()
+    await activateSubscription(s.id);
+    load();
   } catch (err) {
-    console.error(err)
-    alert(err.response?.data?.message || "Activation failed.")
+    console.error(err);
+    alert(err.response?.data?.message || "Activation failed.");
   }
-}
+};
 
 const deactivate = async (s) => {
   try {
-    await deactivateSubscription(s.id)
-    load()
+    await deactivateSubscription(s.id);
+    load();
   } catch (err) {
-    console.error(err)
-    alert(err.response?.data?.message || "Deactivation failed.")
+    console.error(err);
+    alert(err.response?.data?.message || "Deactivation failed.");
   }
-}
+};
 
 const bulkActivate = async () => {
-  if (!selectedIds.value.length) return
-  if (!confirm(`Activate ${selectedIds.value.length} subscription(s)?`)) return
+  if (!selectedIds.value.length) return;
+  if (!confirm(`Activate ${selectedIds.value.length} subscription(s)?`)) return;
 
-  await Promise.all(selectedIds.value.map((id) => activateSubscription(id)))
-  load()
-}
+  await Promise.all(selectedIds.value.map((id) => activateSubscription(id)));
+  load();
+};
 
 const bulkDeactivate = async () => {
-  if (!selectedIds.value.length) return
-  if (!confirm(`Deactivate ${selectedIds.value.length} subscription(s)?`)) return
+  if (!selectedIds.value.length) return;
+  if (!confirm(`Deactivate ${selectedIds.value.length} subscription(s)?`))
+    return;
 
-  await Promise.all(selectedIds.value.map((id) => deactivateSubscription(id)))
-  load()
-}
+  await Promise.all(selectedIds.value.map((id) => deactivateSubscription(id)));
+  load();
+};
 
 onMounted(async () => {
-  await Promise.all([loadDropdowns(), load()])
-})
+  await Promise.all([loadDropdowns(), load()]);
+});
 </script>
 
 <template>
   <div class="card">
     <!-- Filters & search -->
-    <div class="px-4 pt-4 d-flex flex-column flex-md-row gap-3 align-center justify-space-between mb-2">
+    <div
+      class="px-4 pt-4 d-flex flex-column flex-md-row gap-3 align-center justify-space-between mb-2"
+    >
       <div class="d-flex flex-wrap gap-3 align-center">
         <VTextField
           v-model="search"
@@ -437,7 +446,7 @@ onMounted(async () => {
           style="min-width: 160px"
         />
 
-        <VSelect
+        <VAutocomplete
           v-model="planFilter"
           :items="plans"
           item-title="name"
@@ -446,6 +455,8 @@ onMounted(async () => {
           variant="outlined"
           density="comfortable"
           hide-details
+          clearable
+          prepend-inner-icon="mdi-wifi"
           style="min-width: 200px"
         />
       </div>
@@ -462,14 +473,28 @@ onMounted(async () => {
         <strong>{{ selectedIds.length }}</strong> selected
       </div>
       <div class="d-flex gap-2 mb-2">
-        <VBtn size="small" color="success" variant="tonal" @click="bulkActivate">Activate</VBtn>
-        <VBtn size="small" color="warning" variant="tonal" @click="bulkUpdateStatus('suspended')">
+        <VBtn size="small" color="success" variant="tonal" @click="bulkActivate"
+          >Activate</VBtn
+        >
+        <VBtn
+          size="small"
+          color="warning"
+          variant="tonal"
+          @click="bulkUpdateStatus('suspended')"
+        >
           Suspend
         </VBtn>
-        <VBtn size="small" color="secondary" variant="tonal" @click="bulkDeactivate">
+        <VBtn
+          size="small"
+          color="secondary"
+          variant="tonal"
+          @click="bulkDeactivate"
+        >
           Deactivate
         </VBtn>
-        <VBtn size="small" color="error" variant="outlined" @click="bulkDelete">Delete</VBtn>
+        <VBtn size="small" color="error" variant="outlined" @click="bulkDelete"
+          >Delete</VBtn
+        >
       </div>
     </div>
 
@@ -490,42 +515,52 @@ onMounted(async () => {
             <th @click="setSort('subscriber_name')" class="sortable-header">
               <div class="d-flex align-center">
                 Subscriber
-                <VIcon size="16" class="ms-1">{{ sortIcon('subscriber_name') }}</VIcon>
+                <VIcon size="16" class="ms-1">{{
+                  sortIcon("subscriber_name")
+                }}</VIcon>
               </div>
             </th>
 
             <th @click="setSort('plan_name')" class="sortable-header">
               <div class="d-flex align-center">
                 Plan
-                <VIcon size="16" class="ms-1">{{ sortIcon('plan_name') }}</VIcon>
+                <VIcon size="16" class="ms-1">{{
+                  sortIcon("plan_name")
+                }}</VIcon>
               </div>
             </th>
 
             <th @click="setSort('start_date')" class="sortable-header">
               <div class="d-flex align-center">
                 Start
-                <VIcon size="16" class="ms-1">{{ sortIcon('start_date') }}</VIcon>
+                <VIcon size="16" class="ms-1">{{
+                  sortIcon("start_date")
+                }}</VIcon>
               </div>
             </th>
 
             <th @click="setSort('monthly_discount')" class="sortable-header">
               <div class="d-flex align-center">
                 Discount
-                <VIcon size="16" class="ms-1">{{ sortIcon('monthly_discount') }}</VIcon>
+                <VIcon size="16" class="ms-1">{{
+                  sortIcon("monthly_discount")
+                }}</VIcon>
               </div>
             </th>
 
             <th @click="setSort('current_balance')" class="sortable-header">
               <div class="d-flex align-center">
                 Balance
-                <VIcon size="16" class="ms-1">{{ sortIcon('current_balance') }}</VIcon>
+                <VIcon size="16" class="ms-1">{{
+                  sortIcon("current_balance")
+                }}</VIcon>
               </div>
             </th>
 
             <th @click="setSort('status')" class="sortable-header">
               <div class="d-flex align-center">
                 Status
-                <VIcon size="16" class="ms-1">{{ sortIcon('status') }}</VIcon>
+                <VIcon size="16" class="ms-1">{{ sortIcon("status") }}</VIcon>
               </div>
             </th>
 
@@ -541,9 +576,11 @@ onMounted(async () => {
                 @update:model-value="
                   (checked) => {
                     if (checked) {
-                      if (!selectedIds.includes(s.id)) selectedIds.push(s.id)
+                      if (!selectedIds.includes(s.id)) selectedIds.push(s.id);
                     } else {
-                      selectedIds.value = selectedIds.value.filter((id) => id !== s.id)
+                      selectedIds.value = selectedIds.value.filter(
+                        (id) => id !== s.id,
+                      );
                     }
                   }
                 "
@@ -558,7 +595,9 @@ onMounted(async () => {
               <div class="fw-500">{{ s.plan?.name ?? "—" }}</div>
               <div class="text-caption text-medium-emphasis">
                 {{ s.plan?.speed ? `${s.plan.speed} Mbps` : "" }}
-                <span v-if="s.plan?.price"> • {{ formatCurrency(s.plan.price) }} </span>
+                <span v-if="s.plan?.price">
+                  • {{ formatCurrency(s.plan.price) }}
+                </span>
               </div>
             </td>
 
@@ -573,13 +612,27 @@ onMounted(async () => {
             </td>
 
             <td class="text-end">
-              <VBtn size="small" variant="text" class="me-1" @click="openBillingPreview(s)">Billing</VBtn>
+              <VBtn
+                size="small"
+                variant="text"
+                class="me-1"
+                @click="openBillingPreview(s)"
+                >Billing</VBtn
+              >
 
-              <VBtn size="small" variant="text" class="me-1" @click="openHistory(s)">History</VBtn>
+              <VBtn
+                size="small"
+                variant="text"
+                class="me-1"
+                @click="openHistory(s)"
+                >History</VBtn
+              >
 
               <VMenu>
                 <template #activator="{ props }">
-                  <VBtn size="small" variant="outlined" v-bind="props">Actions</VBtn>
+                  <VBtn size="small" variant="outlined" v-bind="props"
+                    >Actions</VBtn
+                  >
                 </template>
 
                 <VList density="compact">
@@ -587,12 +640,22 @@ onMounted(async () => {
                     <VListItemTitle>Edit</VListItemTitle>
                   </VListItem>
 
-                  <VListItem v-if="getStatus(s) !== 'active'" @click="activate(s)">
-                    <VListItemTitle class="text-success">Activate</VListItemTitle>
+                  <VListItem
+                    v-if="getStatus(s) !== 'active'"
+                    @click="activate(s)"
+                  >
+                    <VListItemTitle class="text-success"
+                      >Activate</VListItemTitle
+                    >
                   </VListItem>
 
-                  <VListItem v-if="getStatus(s) === 'active'" @click="deactivate(s)">
-                    <VListItemTitle class="text-secondary">Deactivate</VListItemTitle>
+                  <VListItem
+                    v-if="getStatus(s) === 'active'"
+                    @click="deactivate(s)"
+                  >
+                    <VListItemTitle class="text-secondary"
+                      >Deactivate</VListItemTitle
+                    >
                   </VListItem>
 
                   <VListItem @click="openBillingPreview(s)">
@@ -612,13 +675,17 @@ onMounted(async () => {
           </tr>
 
           <tr v-if="!loading && subscriptions.length === 0">
-            <td colspan="8" class="text-center text-muted py-4">No subscriptions found</td>
+            <td colspan="8" class="text-center text-muted py-4">
+              No subscriptions found
+            </td>
           </tr>
         </tbody>
       </VTable>
 
       <!-- Pagination + per page -->
-      <div class="d-flex flex-column flex-sm-row align-center justify-space-between px-4 py-3 gap-3">
+      <div
+        class="d-flex flex-column flex-sm-row align-center justify-space-between px-4 py-3 gap-3"
+      >
         <VPagination
           v-model="page"
           :length="Math.ceil(totalItems / perPage) || 1"
@@ -643,8 +710,8 @@ onMounted(async () => {
             style="max-width: 110px"
             @update:modelValue="
               () => {
-                page = 1
-                load()
+                page = 1;
+                load();
               }
             "
           />
@@ -689,28 +756,59 @@ onMounted(async () => {
               </template>
             </VAutocomplete>
 
-            <div v-if="form.subscriber_id" class="text-caption mt-1 text-medium-emphasis">
+            <div
+              v-if="form.subscriber_id"
+              class="text-caption mt-1 text-medium-emphasis"
+            >
               Selected ID: {{ form.subscriber_id }}
             </div>
           </VCol>
 
           <VCol cols="12" md="6">
-            <VSelect
+            <VAutocomplete
               v-model="form.plan_id"
               :items="plans"
               item-title="name"
               item-value="id"
               label="Plan"
               variant="outlined"
+              prepend-inner-icon="mdi-wifi"
+              clearable
+            >
+              <template #item="{ props, item }">
+                <VListItem v-bind="props">
+                  <VListItemTitle>
+                    {{ item.raw?.name ?? "—" }}
+                  </VListItemTitle>
+
+                  <VListItemSubtitle>
+                    {{ item.raw?.subtitle ?? "" }}
+                  </VListItemSubtitle>
+                </VListItem>
+              </template>
+
+              <template #selection="{ item }">
+                {{ item.raw?.name ?? "—" }}
+              </template>
+            </VAutocomplete>
+          </VCol>
+
+          <VCol cols="12" md="6">
+            <VTextField
+              v-model="form.start_date"
+              label="Start Date"
+              type="date"
+              variant="outlined"
             />
           </VCol>
 
           <VCol cols="12" md="6">
-            <VTextField v-model="form.start_date" label="Start Date" type="date" variant="outlined" />
-          </VCol>
-
-          <VCol cols="12" md="6">
-            <VTextField v-model="form.end_date" label="End Date (optional)" type="date" variant="outlined" />
+            <VTextField
+              v-model="form.end_date"
+              label="End Date (optional)"
+              type="date"
+              variant="outlined"
+            />
           </VCol>
 
           <VCol cols="12" md="6">
@@ -746,27 +844,39 @@ onMounted(async () => {
         </div>
 
         <div v-else-if="billingData">
-          <p class="mb-1"><strong>Subscriber:</strong> {{ billingData.subscriber }}</p>
+          <p class="mb-1">
+            <strong>Subscriber:</strong> {{ billingData.subscriber }}
+          </p>
           <p class="mb-1"><strong>Plan:</strong> {{ billingData.plan }}</p>
-          <p class="mb-1"><strong>Billing Period:</strong> {{ billingData.billing_period }}</p>
+          <p class="mb-1">
+            <strong>Billing Period:</strong> {{ billingData.billing_period }}
+          </p>
 
           <VTable density="compact" class="mt-4">
             <tbody>
               <tr>
                 <td>Previous Balance</td>
-                <td class="text-end">{{ formatCurrency(billingData.previous_balance) }}</td>
+                <td class="text-end">
+                  {{ formatCurrency(billingData.previous_balance) }}
+                </td>
               </tr>
               <tr>
                 <td>Base Amount</td>
-                <td class="text-end">{{ formatCurrency(billingData.base_amount) }}</td>
+                <td class="text-end">
+                  {{ formatCurrency(billingData.base_amount) }}
+                </td>
               </tr>
               <tr>
                 <td>Add-ons</td>
-                <td class="text-end">{{ formatCurrency(billingData.addons_amount) }}</td>
+                <td class="text-end">
+                  {{ formatCurrency(billingData.addons_amount) }}
+                </td>
               </tr>
               <tr>
                 <td>Service Credits</td>
-                <td class="text-end">-{{ formatCurrency(billingData.credits_amount) }}</td>
+                <td class="text-end">
+                  -{{ formatCurrency(billingData.credits_amount) }}
+                </td>
               </tr>
               <tr>
                 <td><strong>Total Due</strong></td>

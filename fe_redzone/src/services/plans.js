@@ -15,3 +15,7 @@ export function deletePlan(id) {
 export function showPlan(id) {
   return api.get(`/api/plans/${id}`)
 }
+
+export function fetchPlanOptions(params = {}) {
+  return api.get('/api/plans/options', { params })
+}

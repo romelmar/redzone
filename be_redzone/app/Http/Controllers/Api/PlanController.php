@@ -25,6 +25,36 @@ class PlanController extends Controller
         );
     }
 
+    public function options(Request $request)
+    {
+        $search = $request->get('search');
+
+        $plans = Plan::query()
+            ->when($search, function ($query) use ($search) {
+                $query->where('name', 'like', "%{$search}%");
+            })
+            ->orderBy('name')
+            ->limit(20)
+            ->get([
+                'id',
+                'name',
+                'price',
+                'speed',
+            ])
+            ->map(function ($plan) {
+                return [
+                    'id' => $plan->id,
+                    'title' => $plan->name,
+                    'subtitle' => "₱" . number_format($plan->price, 2) .
+                        ($plan->speed ? " • {$plan->speed}" : ""),
+                    'price' => $plan->price,
+                    'speed' => $plan->speed,
+                ];
+            });
+
+        return response()->json($plans);
+    }
+
     public function store(Request $request)
     {
         $data = $request->validate([
@@ -69,4 +99,3 @@ class PlanController extends Controller
         return response()->json(['message' => 'Plan deleted successfully']);
     }
 }
-
