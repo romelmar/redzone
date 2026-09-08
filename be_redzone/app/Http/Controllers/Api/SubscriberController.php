@@ -36,7 +36,7 @@ public function index(Request $request)
 
     $query->withCount('subscriptions');
 
-    if (in_array($sortBy, ['name', 'email', 'phone'], true)) {
+    if (in_array($sortBy, ['id', 'name', 'email', 'phone'], true)) {
         $query->orderBy($sortBy, $sortDir);
     } elseif ($sortBy === 'subscriptions_count') {
         $query->orderBy('subscriptions_count', $sortDir);
