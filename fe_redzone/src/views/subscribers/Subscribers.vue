@@ -234,7 +234,7 @@ onMounted(load);
             <VTable>
                 <thead>
                     <tr>
-                        <th class="text-nowrap">ID</th>
+                        <th @click="setSort('id')" class="sortable-header text-nowrap">ID <VIcon size="16" class="ms-1">{{ sortIcon('id') }}</VIcon></th>
                         <th @click="setSort('name')" class="sortable-header">Name <VIcon size="16" class="ms-1">{{ sortIcon('name') }}</VIcon></th>
                         <th @click="setSort('email')" class="sortable-header">Email <VIcon size="16" class="ms-1">{{ sortIcon('email') }}</VIcon></th>
                         <th @click="setSort('phone')" class="sortable-header">Phone <VIcon size="16" class="ms-1">{{ sortIcon('phone') }}</VIcon></th>
