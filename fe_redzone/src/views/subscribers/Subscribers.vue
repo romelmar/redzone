@@ -12,6 +12,8 @@ import debounce from "lodash/debounce";
 
 // UI state
 const loading = ref(false);
+const saving = ref(false)
+const formError = ref("")
 const dialog = ref(false);
 
 // Table state
@@ -47,7 +49,8 @@ const sortDir = ref('asc');
 
 // Load table from API
 const load = async () => {
-    loading.value = true;
+    loading.value = true
+    try {
 
     const { data } = await fetchSubscribers({
         page: page.value,
@@ -59,7 +62,11 @@ const load = async () => {
 
     subscribers.value = data.data;
     totalItems.value = data.total;
-    loading.value = false;
+    } catch (error) {
+        formError.value = error.response?.data?.message || "Unable to load records. Please try again."
+    } finally {
+        loading.value = false
+    }
 };
 
 // When selecting an autocomplete result
@@ -140,6 +147,7 @@ watch(selectedSubscriber, (id) => {
 
 // CRUD
 const openCreate = () => {
+  formError.value = ""
     form.value = {
         id: null,
         name: "",
@@ -159,11 +167,21 @@ const openEdit = async id => {
 };
 
 const save = async () => {
+  if (saving.value) return
+  saving.value = true
+  formError.value = ""
+  try {
     if (form.value.id) await updateSubscriber(form.value.id, form.value);
     else await createSubscriber(form.value);
 
     dialog.value = false;
-    load();
+    await load();
+
+  } catch (error) {
+    formError.value = Object.values(error.response?.data?.errors || {}).flat().join(" ") || error.response?.data?.message || "Unable to save. Please try again."
+  } finally {
+    saving.value = false
+  }
 };
 
 const remove = async item => {
@@ -190,6 +208,7 @@ onMounted(load);
 
 <template>
     <div class="card">
+        <VAlert v-if="formError && !dialog" type="error" class="mb-4">{{ formError }}</VAlert>
 
         <!-- Autocomplete Search -->
         <VAutocomplete v-model="selectedSubscriber" v-model:search="searchText" label="Search subscribers" clearable
@@ -298,6 +317,7 @@ onMounted(load);
             </VCardTitle>
 
             <VCardText>
+        <VAlert v-if="formError" type="error" class="mb-4">{{ formError }}</VAlert>
                 <VRow>
                     <VCol cols="12">
                         <VTextField label="Name" v-model="form.name" />
@@ -320,8 +340,8 @@ onMounted(load);
 
             <VCardActions>
                 <VSpacer />
-                <VBtn variant="tonal" @click="dialog = false">Cancel</VBtn>
-                <VBtn color="primary" @click="save">Save</VBtn>
+                <VBtn variant="tonal" :disabled="saving" @click="dialog = false">Cancel</VBtn>
+                <VBtn color="primary" :loading="saving" :disabled="saving" @click="save">Save</VBtn>
             </VCardActions>
         </VCard>
     </VDialog>

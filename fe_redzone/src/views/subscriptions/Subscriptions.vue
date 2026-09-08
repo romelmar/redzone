@@ -21,6 +21,8 @@ import debounce from "lodash/debounce";
 // STATE
 // ─────────────────────────────────────────────
 const loading = ref(false);
+const saving = ref(false)
+const formError = ref("")
 const dialog = ref(false);
 
 const subscriptions = ref([]);
@@ -244,6 +246,7 @@ const onPickSubscriber = (subscriber) => {
 // CRUD
 // ─────────────────────────────────────────────
 const openCreate = () => {
+  formError.value = ""
   selectedSubscriber.value = null;
   searchText.value = "";
   searchResults.value = [...subscribers.value];
@@ -287,6 +290,10 @@ const openEdit = (s) => {
 };
 
 const save = async () => {
+  if (saving.value) return
+  saving.value = true
+  formError.value = ""
+  try {
   if (!form.value.subscriber_id) {
     alert("Please select a subscriber.");
     return;
@@ -306,7 +313,13 @@ const save = async () => {
   }
 
   dialog.value = false;
-  load();
+  await load();
+
+  } catch (error) {
+    formError.value = Object.values(error.response?.data?.errors || {}).flat().join(" ") || error.response?.data?.message || "Unable to save. Please try again."
+  } finally {
+    saving.value = false
+  }
 };
 
 const remove = async (s) => {
@@ -728,6 +741,8 @@ onMounted(async () => {
       </VCardTitle>
 
       <VCardText>
+        <p v-if="form.id" class="mb-4">Plan and discount changes apply from next month.</p>
+        <VAlert v-if="formError" type="error" class="mb-4">{{ formError }}</VAlert>
         <VRow>
           <VCol cols="12" md="6">
             <VAutocomplete
@@ -797,6 +812,8 @@ onMounted(async () => {
             <VTextField
               v-model="form.start_date"
               label="Start Date"
+              :disabled="!!form.id"
+              hint="The start date defines billing history."
               type="date"
               variant="outlined"
             />
@@ -828,8 +845,8 @@ onMounted(async () => {
 
       <VCardActions>
         <VSpacer />
-        <VBtn variant="tonal" @click="dialog = false">Cancel</VBtn>
-        <VBtn color="primary" @click="save">Save</VBtn>
+        <VBtn variant="tonal" :disabled="saving" @click="dialog = false">Cancel</VBtn>
+        <VBtn color="primary" :loading="saving" :disabled="saving" @click="save">Save</VBtn>
       </VCardActions>
     </VCard>
   </VDialog>

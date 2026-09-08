@@ -10,6 +10,7 @@ import {
 } from "@/services/payments"
 
 import { fetchSubscriptionOptions } from "@/services/subscriptions"
+import { newRequestKey } from "@/helpers/requestKey"
 import { formatIsoToReadable } from "@/helpers/dateUtils"
 
 /*
@@ -19,6 +20,8 @@ import { formatIsoToReadable } from "@/helpers/dateUtils"
 */
 const loading = ref(false)
 const loadingSubs = ref(false)
+const saving = ref(false)
+const formError = ref("")
 const dialog = ref(false)
 
 const payments = ref([])
@@ -166,8 +169,10 @@ watch(subscriptionSearch, debouncedSubSearch)
 |--------------------------------------------------------------------------
 */
 const openCreate = () => {
+  formError.value = ""
   form.value = {
     id: null,
+    request_key: newRequestKey(),
     subscription_id: null,
     amount: null,
     payment_date: new Date().toISOString().slice(0, 10),
@@ -194,6 +199,10 @@ const openEdit = async (p) => {
 }
 
 const save = async () => {
+  if (saving.value) return
+  saving.value = true
+  formError.value = ""
+  try {
   if (!form.value.subscription_id) {
     alert("Please select a subscription.")
     return
@@ -216,8 +225,14 @@ const save = async () => {
   }
 
   dialog.value = false
-  load()
-}
+  await load()
+
+  } catch (error) {
+    formError.value = Object.values(error.response?.data?.errors || {}).flat().join(" ") || error.response?.data?.message || "Unable to save. Please try again."
+  } finally {
+    saving.value = false
+  }
+};
 
 const remove = async (p) => {
   if (!confirm(`Delete payment #${p.id}?`)) return
@@ -381,6 +396,7 @@ onMounted(() => {
       <VCardTitle>{{ form.id ? "Edit Payment" : "Add Payment wwww" }}</VCardTitle>
 
       <VCardText>
+        <VAlert v-if="formError" type="error" class="mb-4">{{ formError }}</VAlert>
         <VRow>
           <VCol cols="12">
             <VAutocomplete
@@ -436,8 +452,8 @@ onMounted(() => {
 
       <VCardActions>
         <VSpacer />
-        <VBtn variant="tonal" @click="dialog = false">Cancel</VBtn>
-        <VBtn color="primary" @click="save">Save</VBtn>
+        <VBtn variant="tonal" :disabled="saving" @click="dialog = false">Cancel</VBtn>
+        <VBtn color="primary" :loading="saving" :disabled="saving" @click="save">Save</VBtn>
       </VCardActions>
     </VCard>
   </VDialog>
