@@ -84,7 +84,17 @@ class PlanController extends Controller
             'price' => 'required|numeric|min:0',
         ]);
 
-        $plan->update($data);
+        $plan->getConnection()->transaction(function () use ($plan, $data) {
+            Plan::whereKey($plan->id)->lockForUpdate()->firstOrFail();
+            $plan->refresh();
+            $priceChanged = (float) $plan->price !== (float) $data['price'];
+            $plan->update($data);
+            if ($priceChanged) {
+                $plan->subscriptions()->lockForUpdate()->each(function ($subscription) {
+                    $subscription->recordRate(now()->startOfMonth()->addMonth());
+                });
+            }
+        });
 
         return response()->json([
             'message' => 'Plan updated successfully',
@@ -94,7 +104,11 @@ class PlanController extends Controller
 
     public function destroy(Plan $plan)
     {
-        $plan->delete();
+        $plan->getConnection()->transaction(function () use ($plan) {
+            Plan::whereKey($plan->id)->lockForUpdate()->firstOrFail();
+            abort_if($plan->subscriptions()->exists(), 422, 'This plan has subscriptions and cannot be deleted.');
+            $plan->delete();
+        });
 
         return response()->json(['message' => 'Plan deleted successfully']);
     }

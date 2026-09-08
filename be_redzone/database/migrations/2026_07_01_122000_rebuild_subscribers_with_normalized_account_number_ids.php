@@ -12,6 +12,10 @@ return new class extends Migration
      */
     public function up(): void
     {
+        if (DB::getDriverName() !== 'mysql') {
+            return;
+        }
+
         $rowsToMove = DB::table('subscribers')
             ->where('id', '>=', 100000000)
             ->orderBy('id')
@@ -74,7 +78,7 @@ return new class extends Migration
         }
 
         $foreignKey = DB::select("SELECT CONSTRAINT_NAME FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'subscriptions' AND CONSTRAINT_TYPE = 'FOREIGN KEY' AND CONSTRAINT_NAME = 'subscriptions_subscriber_id_foreign'");
-        if (!empty($foreignKey)) {
+        if (! empty($foreignKey)) {
             DB::statement('ALTER TABLE subscriptions DROP FOREIGN KEY subscriptions_subscriber_id_foreign');
         }
 

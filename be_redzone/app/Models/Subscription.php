@@ -30,6 +30,45 @@ class Subscription extends Model
         'deactivated_at' => 'datetime',
     ];
 
+    protected static function booted(): void
+    {
+        static::created(function (self $subscription) {
+            $subscription->recordRate($subscription->start_date->copy()->startOfMonth());
+        });
+        static::updated(function (self $subscription) {
+            if ($subscription->wasChanged(['plan_id', 'monthly_discount'])) {
+                $subscription->unsetRelation('plan');
+                $subscription->recordRate(now()->startOfMonth()->addMonth());
+            }
+        });
+    }
+
+    public function rates()
+    {
+        return $this->hasMany(SubscriptionRate::class);
+    }
+
+    public function recordRate(Carbon $effectiveFrom): void
+    {
+        $effectiveFrom = $effectiveFrom->max($this->start_date->copy()->startOfMonth());
+        $this->rates()->updateOrCreate(['effective_from' => $effectiveFrom->toDateString()], [
+            'price' => $this->plan->price,
+            'discount' => $this->monthly_discount ?? 0,
+        ]);
+        $this->unsetRelation('rates');
+    }
+
+    public function rateForMonth(Carbon $month): array
+    {
+        $rate = $this->rates->filter(fn ($rate) => $rate->effective_from->lte($month->copy()->startOfMonth()))
+            ->sortByDesc('effective_from')->first();
+
+        return [
+            'price' => (float) ($rate?->price ?? $this->plan?->price ?? 0),
+            'discount' => (float) ($rate?->discount ?? $this->monthly_discount ?? 0),
+        ];
+    }
+
 
 
     public function subscriber()
@@ -61,7 +100,7 @@ class Subscription extends Model
     public function dueDateForMonth(Carbon $month): Carbon
     {
         $day = (int)$this->start_date->day;
-        return (clone $month)->day($day); // $month is first-of-month
+        return $month->copy()->day(min($day, $month->daysInMonth));
     }
 
     public function billingPeriodStartForMonth(Carbon $month): Carbon
@@ -72,7 +111,7 @@ class Subscription extends Model
 
     public function billingPeriodEndForMonth(Carbon $month): Carbon
     {
-        return $this->billingPeriodStartForMonth($month)->copy()->addMonth()->subDay();
+        return $this->billingPeriodStartForMonth($month->copy()->startOfMonth()->addMonth())->subDay();
     }
 
     public function billingPeriodForMonth(Carbon $month): array
@@ -81,7 +120,7 @@ class Subscription extends Model
 
         return [
             'start' => $start,
-            'end' => $start->copy()->addMonth()->subDay(),
+            'end' => $this->billingPeriodEndForMonth($month),
         ];
     }
 

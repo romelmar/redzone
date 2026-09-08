@@ -17,16 +17,13 @@ class SubscriptionController extends Controller
     /**
      * List all subscriptions
      */
-    public function index(Request $request)
+    public function index(Request $request, BillingService $billing)
     {
 
-        $perPage = (int) $request->get('per_page', 10);
+        $perPage = max(1, min(100, (int) $request->get('per_page', 10)));
 
         $query = Subscription::query()
-            ->with(['subscriber', 'plan'])
-            ->withSum('payments as payments_total', 'amount')
-            ->withSum('addons as addons_total', 'amount')
-            ->withSum('serviceCredits as credits_total', 'amount');
+            ->with(['subscriber', 'plan', 'rates', 'payments', 'addons', 'serviceCredits']);
 
         /*
         |--------------------------------------------------------------------------
@@ -75,7 +72,7 @@ class SubscriptionController extends Controller
         |--------------------------------------------------------------------------
         */
         $sortBy  = $request->get('sort_by', 'start_date');
-        $sortDir = $request->get('sort_dir', 'desc');
+        $sortDir = strtolower($request->get('sort_dir', 'desc')) === 'asc' ? 'asc' : 'desc';
 
         match ($sortBy) {
             'subscriber_name' => $query
@@ -100,17 +97,9 @@ class SubscriptionController extends Controller
         | PAGINATION
         |--------------------------------------------------------------------------
         */
-        $subscriptions = $query->paginate($perPage)->through(function ($s) {
+        $subscriptions = $query->paginate($perPage)->through(function ($s) use ($billing) {
             // compute current balance server-side
-            $monthly = $s->plan?->price ?? 0;
-            $discount = $s->monthly_discount ?? 0;
-
-            $currentBalance =
-                $monthly
-                - $discount
-                + ($s->addons_total ?? 0)
-                - ($s->credits_total ?? 0)
-                - ($s->payments_total ?? 0);
+            $currentBalance = $billing->computeFor($s, now()->startOfMonth())['total_due'];
 
             return [
                 'id'                => $s->id,
@@ -216,7 +205,7 @@ public function options(Request $request)
 
         // $data['subscriber_id'] = $subscriber->id;
 
-        $subscription = Subscription::create($data);
+        $subscription = \Illuminate\Support\Facades\DB::transaction(fn () => Subscription::create($data));
 
         return response()->json([
             'message' => 'Subscription created successfully',
@@ -247,7 +236,16 @@ public function options(Request $request)
             'collector_name'    => ['nullable', 'string', 'max:255'],
         ]);
 
-        $subscription->update($data);
+        if (isset($data['start_date']) && !Carbon::parse($data['start_date'])->isSameDay($subscription->start_date)) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'start_date' => 'The start date cannot be changed after creation because it defines billing history.',
+            ]);
+        }
+        $subscription->getConnection()->transaction(function () use ($subscription, $data) {
+            $locked = Subscription::whereKey($subscription->id)->lockForUpdate()->firstOrFail();
+            $locked->update($data);
+            $subscription->refresh();
+        });
 
         return response()->json([
             'message' => 'Subscription updated successfully',
@@ -260,7 +258,14 @@ public function options(Request $request)
      */
     public function destroy(Subscription $subscription)
     {
-        $subscription->delete();
+        $subscription->getConnection()->transaction(function () use ($subscription) {
+            Subscription::whereKey($subscription->id)->lockForUpdate()->firstOrFail();
+            abort_if($subscription->payments()->exists() || $subscription->addons()->exists()
+                || $subscription->serviceCredits()->exists() || $subscription->events()->exists()
+                || $subscription->start_date->copy()->startOfMonth()->lte(now()->startOfMonth()),
+                422, 'This subscription has financial or activity history. Deactivate it instead.');
+            $subscription->delete();
+        });
 
         return response()->json(['message' => 'Subscription deleted successfully']);
     }

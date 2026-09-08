@@ -36,9 +36,9 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
 
-Route::get('/subscribers', [SubscriberController::class, 'getSubscribers']);
+Route::middleware('auth:sanctum')->group(function () {
 Route::get('/subscribers/search', [SubscriberController::class, 'search']);
-Route::get('/subscribers-with-dues', [SubscriberController::class, 'getSubscribersWithDues']);
+Route::get('/subscribers-with-dues', [BillingController::class, 'subscribersWithDues']);
 // Route::get('/subscriptions', [SubscriptionController::class, 'index']);
 // Route::get('/subscriptions/{id}', [SubscriptionController::class, 'show']);
 
@@ -82,7 +82,7 @@ Route::post('/subscriptions/{subscription}/assign-collector', [SubscriptionContr
 Route::prefix('subscriptions')->group(function () {
     Route::post('{subscription}/activate', [SubscriptionController::class, 'activate']);
     Route::post('{subscription}/deactivate', [SubscriptionController::class, 'deactivate']);
-    Route::post('{subscription}/suspend', [SubscriptionController::class, 'suspend']);
+    Route::post('{subscription}/suspend', [SubscriptionController::class, 'deactivate']);
 
     // Route::get('{subscription}/history', [SubscriptionController::class, 'history']);
     Route::get('{subscription}/history', [SubscriptionHistoryController::class, 'index']);
@@ -108,3 +108,4 @@ Route::get('/collection-sheet/print', [CollectionController::class, 'printCollec
 
 Route::post('/collection-sheet/assign-collector', [CollectionAssignmentController::class, 'assignFromCollectionSheet']);
 Route::delete('/collection-sheet/{assignment}', [CollectionController::class, 'removeAssignment']);
+});

@@ -80,6 +80,7 @@ class PaymentController extends Controller
     public function store(Request $request)
     {
         $data = $request->validate([
+            'request_key'     => 'nullable|uuid',
             'subscription_id' => 'required|exists:subscriptions,id',
             'amount'          => 'required|numeric|min:0.01',
             'payment_date'    => 'required|date',
@@ -87,7 +88,17 @@ class PaymentController extends Controller
             'remarks'         => 'nullable|string',
         ]);
 
-        $payment = Payment::create($data);
+        $key = $data['request_key'] ?? null;
+        unset($data['request_key']);
+        $data['subscription_id'] = (int) $data['subscription_id'];
+        $data['amount'] = number_format((float) $data['amount'], 2, '.', '');
+        $data['payment_date'] = \Carbon\Carbon::parse($data['payment_date'])->toDateString();
+        $data['remarks'] = $data['remarks'] ?? null;
+        $hash = hash('sha256', json_encode($data));
+        $payment = $key
+            ? Payment::query()->createOrFirst(['request_key' => $key], $data + ['request_hash' => $hash])
+            : Payment::create($data);
+        abort_if($key && $payment->request_hash !== $hash, 409, 'This payment request was already used with different details. Reopen the form to record another payment.');
 
         return response()->json(
             $payment->load(['subscription.subscriber', 'subscription.plan']),

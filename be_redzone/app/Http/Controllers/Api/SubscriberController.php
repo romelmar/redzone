@@ -71,7 +71,7 @@ public function search(Request $request)
         ]);
 
 
-        $subscriber = Subscriber::create($data);
+        $subscriber = Subscriber::createWithNextId($data);
 
         return response()->json(['message' => 'Subscriber created successfully', 'subscriber' => $subscriber]);
     }
@@ -97,7 +97,11 @@ public function search(Request $request)
 
     public function destroy(Subscriber $subscriber)
     {
-        $subscriber->delete();
+        $subscriber->getConnection()->transaction(function () use ($subscriber) {
+            Subscriber::whereKey($subscriber->id)->lockForUpdate()->firstOrFail();
+            abort_if($subscriber->subscriptions()->exists(), 422, 'This subscriber has subscriptions and cannot be deleted. Deactivate their subscriptions instead.');
+            $subscriber->delete();
+        });
 
         return response()->json(['message' => 'Subscriber deleted successfully']);
     }

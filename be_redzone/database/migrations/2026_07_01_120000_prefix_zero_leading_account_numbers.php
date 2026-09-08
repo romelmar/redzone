@@ -10,6 +10,10 @@ return new class extends Migration
      */
     public function up(): void
     {
+        if (DB::getDriverName() !== 'mysql') {
+            return;
+        }
+
         $rows = DB::table('subscribers')
             ->where('account_number', 'like', '0%')
             ->pluck('account_number');
@@ -18,7 +22,7 @@ return new class extends Migration
             return;
         }
 
-        $transformed = $rows->map(fn($account) => '9' . $account)->all();
+        $transformed = $rows->map(fn ($account) => '9'.$account)->all();
         $conflicts = DB::table('subscribers')
             ->whereIn('account_number', $transformed)
             ->exists();

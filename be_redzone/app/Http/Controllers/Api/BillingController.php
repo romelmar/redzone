@@ -19,6 +19,7 @@ class BillingController extends Controller
      */
    public function subscribersWithDues(Request $request, BillingService $billing)
 {
+    $request->validate(['month' => 'sometimes|date', 'per_page' => 'sometimes|integer|min:1|max:100', 'page' => 'sometimes|integer|min:1']);
     $monthParam = $request->get('month', now()->startOfMonth()->toDateString());
     $billMonth = Carbon::parse($monthParam)->startOfMonth();
 
@@ -29,7 +30,7 @@ class BillingController extends Controller
     $sortDir = strtolower($request->get('sort_dir', 'asc')) === 'asc' ? 'asc' : 'desc';
 
     $subscriptions = Subscription::query()
-        ->with(['subscriber', 'plan', 'addons', 'payments', 'serviceCredits'])
+        ->with(['subscriber', 'plan', 'rates', 'addons', 'payments', 'serviceCredits'])
         ->where('active', true)
         ->when($search !== '', function ($q) use ($search) {
             $q->where(function ($qq) use ($search) {
@@ -151,7 +152,7 @@ class BillingController extends Controller
             'payments_amount' => (float) $calc['payments_total'],
             'current_bill' => (float) $calc['current_bill'],
             'total_due' => (float) $calc['total_due'],
-            'credits_days' => (int) ($calc['credits_days'] ?? 0),
+            'credits_days' => (int) ($calc['credit_days'] ?? 0),
         ];
 
         $pdf = Pdf::loadView('pdf.soa', [
@@ -201,7 +202,7 @@ class BillingController extends Controller
             'payments_amount' => (float) $calc['payments_total'],
             'current_bill' => (float) $calc['current_bill'],
             'total_due' => (float) $calc['total_due'],
-            'credits_days' => (int) ($calc['credits_days'] ?? 0),
+            'credits_days' => (int) ($calc['credit_days'] ?? 0),
         ];
 
         $pdf = Pdf::loadView('pdf.soa', [

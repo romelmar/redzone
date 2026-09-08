@@ -10,6 +10,10 @@ return new class extends Migration
      */
     public function up(): void
     {
+        if (DB::getDriverName() !== 'mysql') {
+            return;
+        }
+
         $rows = DB::table('subscribers')
             ->where('account_number', 'like', '90%')
             ->orderBy('id')
@@ -33,10 +37,10 @@ return new class extends Migration
             $candidate = $normalized;
             $suffix = 0;
             while (isset($lookup[$candidate]) || isset($assigned[$candidate])) {
-                $candidate = '1000000' . ($suffix === 0 ? '' : $suffix) . $normalized;
+                $candidate = '1000000'.($suffix === 0 ? '' : $suffix).$normalized;
                 $suffix++;
                 if ($suffix > 10000) {
-                    throw new \RuntimeException('Unable to generate a unique fallback account_number for ' . $row->account_number);
+                    throw new \RuntimeException('Unable to generate a unique fallback account_number for '.$row->account_number);
                 }
             }
 

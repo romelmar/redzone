@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class ServiceCredit extends Model
 {
-  protected $fillable = ['subscription_id', 'credit_month', 'outage_days', 'reason'];
+  protected $fillable = ['subscription_id', 'credit_month', 'outage_days', 'amount', 'reason'];
   protected $casts = ['credit_month' => 'date'];
 
   public function subscription()

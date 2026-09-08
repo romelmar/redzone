@@ -49,9 +49,12 @@ class ServiceCreditController extends Controller
 
         $month = Carbon::parse($data['credit_month'])->startOfMonth();
         $daysInMonth = $month->daysInMonth;
+        if ($data['outage_days'] > $daysInMonth) {
+            throw \Illuminate\Validation\ValidationException::withMessages(['outage_days' => 'Outage days cannot exceed the days in the month.']);
+        }
 
         $amount = round(
-            ($subscription->plan->price / $daysInMonth) * $data['outage_days'],
+            ($subscription->rateForMonth($month)['price'] / $daysInMonth) * $data['outage_days'],
             2
         );
 
@@ -79,6 +82,15 @@ class ServiceCreditController extends Controller
             'reason'      => 'nullable|string',
         ]);
 
+        if (isset($data['credit_month']) || isset($data['outage_days'])) {
+            $month = Carbon::parse($data['credit_month'] ?? $serviceCredit->credit_month)->startOfMonth();
+            $days = $data['outage_days'] ?? $serviceCredit->outage_days;
+            if ($days > $month->daysInMonth) {
+                throw \Illuminate\Validation\ValidationException::withMessages(['outage_days' => 'Outage days cannot exceed the days in the month.']);
+            }
+            $data['credit_month'] = $month;
+            $data['amount'] = round($serviceCredit->subscription->rateForMonth($month)['price'] / $month->daysInMonth * $days, 2);
+        }
         $serviceCredit->update($data);
         return $serviceCredit;
     }
