@@ -260,7 +260,7 @@ public function options(Request $request)
     {
         $subscription->getConnection()->transaction(function () use ($subscription) {
             Subscription::whereKey($subscription->id)->lockForUpdate()->firstOrFail();
-            abort_if($subscription->payments()->exists() || $subscription->addons()->exists()
+            abort_if($subscription->payments()->withTrashed()->exists() || $subscription->addons()->exists()
                 || $subscription->serviceCredits()->exists() || $subscription->events()->exists()
                 || $subscription->start_date->copy()->startOfMonth()->lte(now()->startOfMonth()),
                 422, 'This subscription has financial or activity history. Deactivate it instead.');

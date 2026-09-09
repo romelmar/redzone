@@ -37,6 +37,11 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 });
 
 Route::middleware('auth:sanctum')->group(function () {
+Route::get('/operations/dashboard', [\App\Http\Controllers\Api\OperationsController::class, 'dashboard']);
+Route::get('/operations/reconciliation', [\App\Http\Controllers\Api\OperationsController::class, 'reconciliation']);
+Route::post('/operations/remittances', [\App\Http\Controllers\Api\OperationsController::class, 'remit']);
+Route::post('/operations/remittances/{remittance}/void', [\App\Http\Controllers\Api\OperationsController::class, 'voidRemittance']);
+Route::get('/operations/payment-audits', [\App\Http\Controllers\Api\OperationsController::class, 'audits']);
 Route::get('/subscribers/search', [SubscriberController::class, 'search']);
 Route::get('/subscribers-with-dues', [BillingController::class, 'subscribersWithDues']);
 // Route::get('/subscriptions', [SubscriptionController::class, 'index']);

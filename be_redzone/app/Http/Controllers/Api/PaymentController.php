@@ -80,9 +80,11 @@ class PaymentController extends Controller
     public function store(Request $request)
     {
         $data = $request->validate([
+            'collector_name' => 'nullable|string|max:255',
+            'payment_method' => 'sometimes|in:cash,gcash,bank,unspecified',
             'request_key'     => 'nullable|uuid',
             'subscription_id' => 'required|exists:subscriptions,id',
-            'amount'          => 'required|numeric|min:0.01',
+            'amount'          => 'required|numeric|min:0.01|max:99999999.99|decimal:0,2',
             'payment_date'    => 'required|date',
             'payment_type'    => 'required|in:payment,offset,adjustment',
             'remarks'         => 'nullable|string',
@@ -94,10 +96,13 @@ class PaymentController extends Controller
         $data['amount'] = number_format((float) $data['amount'], 2, '.', '');
         $data['payment_date'] = \Carbon\Carbon::parse($data['payment_date'])->toDateString();
         $data['remarks'] = $data['remarks'] ?? null;
+        $data['collector_name'] = $data['collector_name'] ?? null;
+        $data['payment_method'] = $data['payment_method'] ?? 'unspecified';
         $hash = hash('sha256', json_encode($data));
-        $payment = $key
-            ? Payment::query()->createOrFirst(['request_key' => $key], $data + ['request_hash' => $hash])
-            : Payment::create($data);
+        $payment = \Illuminate\Support\Facades\DB::transaction(fn () => $key
+            ? Payment::withTrashed()->createOrFirst(['request_key' => $key], $data + ['request_hash' => $hash])
+            : Payment::create($data));
+        abort_if($payment->trashed(), 409, 'This payment was voided. Open a new payment form to record another payment.');
         abort_if($key && $payment->request_hash !== $hash, 409, 'This payment request was already used with different details. Reopen the form to record another payment.');
 
         return response()->json(
@@ -116,23 +121,37 @@ class PaymentController extends Controller
     public function update(Request $request, Payment $payment)
     {
         $data = $request->validate([
+            'reason' => 'required|string|min:3|max:1000',
+            'collector_name' => 'nullable|string|max:255',
+            'payment_method' => 'sometimes|in:cash,gcash,bank,unspecified',
             'subscription_id' => 'sometimes|exists:subscriptions,id',
-            'amount'          => 'sometimes|numeric|min:0.01',
+            'amount'          => 'sometimes|numeric|min:0.01|max:99999999.99|decimal:0,2',
             'payment_date'    => 'sometimes|date',
             'payment_type'    => 'sometimes|in:payment,offset,adjustment',
             'remarks'         => 'nullable|string',
         ]);
 
-        $payment->update($data);
+        $payment = $payment->getConnection()->transaction(function () use ($payment, $data) {
+            $locked = Payment::whereKey($payment->id)->lockForUpdate()->firstOrFail();
+            $locked->auditReason = $data['reason'];
+            unset($data['reason']);
+            $locked->update($data);
+            return $locked;
+        });
 
         return response()->json(
             $payment->load(['subscription.subscriber', 'subscription.plan'])
         );
     }
 
-    public function destroy(Payment $payment)
+    public function destroy(Request $request, Payment $payment)
     {
-        $payment->delete();
+        $data = $request->validate(['reason' => 'required|string|min:3|max:1000']);
+        $payment->getConnection()->transaction(function () use ($payment, $data) {
+            $locked = Payment::whereKey($payment->id)->lockForUpdate()->firstOrFail();
+            $locked->auditReason = $data['reason'];
+            $locked->delete();
+        });
 
         return response()->noContent();
     }
