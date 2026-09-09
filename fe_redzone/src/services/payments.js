@@ -9,8 +9,8 @@ export function createPayment(data) {
 export function updatePayment(id, data) {
   return api.put(`/api/payments/${id}`, data)
 }
-export function deletePayment(id) {
-  return api.delete(`/api/payments/${id}`)
+export function deletePayment(id, reason) {
+  return api.delete(`/api/payments/${id}`, { data: { reason } })
 }
 export function showPayment(id) {
   return api.get(`/api/payments/${id}`)

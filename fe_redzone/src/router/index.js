@@ -7,7 +7,7 @@ import SubscriptionsIndex from '@/pages/Subscriptions/Index.vue';
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
-    { path: '/', redirect: '/plans', meta: { requiresAuth: true } },
+    { path: '/', redirect: '/dashboard', meta: { requiresAuth: true } },
     {
       path: '/',
       component: () => import('../layouts/default.vue'),
@@ -104,6 +104,8 @@ const router = createRouter({
       path: '/',
       component: () => import('../layouts/default.vue'),
       children: [
+        { path: 'reconciliation', component: () => import('@/pages/operations/Reconciliation.vue'), meta: { requiresAuth: true } },
+        { path: 'payment-audit', component: () => import('@/pages/operations/PaymentAudit.vue'), meta: { requiresAuth: true } },
         {
           path: 'dashboard',
           component: () => import('../pages/dashboard.vue'),
@@ -141,7 +143,7 @@ router.beforeEach(async (to, from, next) => {
 
   if (to.meta.requiresAuth && !auth.user) {
     try {
-      await auth.fetchUser()
+      await auth.getUser()
     } catch (e) {
       return next({ path: '/login' })
     }

@@ -10,6 +10,7 @@ import {
 } from "@/services/payments"
 
 import { fetchSubscriptionOptions } from "@/services/subscriptions"
+import { businessDate } from "@/helpers/operations"
 import { newRequestKey } from "@/helpers/requestKey"
 import { formatIsoToReadable } from "@/helpers/dateUtils"
 
@@ -175,8 +176,10 @@ const openCreate = () => {
     request_key: newRequestKey(),
     subscription_id: null,
     amount: null,
-    payment_date: new Date().toISOString().slice(0, 10),
+    payment_date: businessDate(),
     payment_type: "payment",
+    collector_name: "",
+    payment_method: "cash",
     remarks: "",
   }
 
@@ -186,6 +189,7 @@ const openCreate = () => {
 const openEdit = async (p) => {
   form.value = {
     ...p,
+    reason: "",
     payment_type: p.payment_type ?? "",
     remarks: p.remarks ?? "",
   }
@@ -235,8 +239,9 @@ const save = async () => {
 };
 
 const remove = async (p) => {
-  if (!confirm(`Delete payment #${p.id}?`)) return
-  await deletePayment(p.id)
+  const reason = prompt(`Void payment #${p.id}? Enter the reason. The record will remain in the audit history.`)
+  if (!reason) return
+  await deletePayment(p.id, reason)
   load()
 }
 
@@ -343,14 +348,14 @@ onMounted(() => {
               </VChip>
             </td>
 
-            <td>{{ p.remarks || "—" }}</td>
+            <td><small class="d-block">#{{ p.id }} / {{ p.collector_name || "Unassigned" }} / {{ p.payment_method || "unspecified" }}</small>{{ p.remarks || "—" }}</td>
 
             <td class="text-end">
               <VBtn size="small" variant="outlined" class="me-1" @click="openEdit(p)">
                 Edit
               </VBtn>
               <VBtn size="small" color="error" variant="outlined" @click="remove(p)">
-                Delete
+                Void
               </VBtn>
             </td>
           </tr>
@@ -396,6 +401,9 @@ onMounted(() => {
       <VCardTitle>{{ form.id ? "Edit Payment" : "Add Payment wwww" }}</VCardTitle>
 
       <VCardText>
+        <VTextField v-model="form.collector_name" label="Collected by" hint="Name of the person who received this payment." class="mb-3" />
+        <VSelect v-model="form.payment_method" label="Payment method" :items="['cash', 'gcash', 'bank', 'unspecified']" class="mb-3" />
+        <VTextarea v-if="form.id" v-model="form.reason" label="Reason for correction (required)" rows="2" class="mb-3" />
         <VAlert v-if="formError" type="error" class="mb-4">{{ formError }}</VAlert>
         <VRow>
           <VCol cols="12">

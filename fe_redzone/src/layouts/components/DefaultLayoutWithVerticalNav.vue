@@ -45,6 +45,7 @@ const vuetifyTheme = useTheme()
     </template>
 
     <template #vertical-nav-content>
+      
       <VerticalNavLink :item="{
         title: 'Dashboard',
         icon: 'bx-home',
@@ -92,6 +93,8 @@ const vuetifyTheme = useTheme()
         icon: 'bx-file',
         to: '/collection-sheet',
       }" />
+      <VerticalNavLink :item="{ title: 'Cash Reconciliation', icon: 'bx-check-shield', to: '/reconciliation' }" />
+      <VerticalNavLink :item="{ title: 'Payment Audit', icon: 'bx-history', to: '/payment-audit' }" />
       
       <!-- <VerticalNavLink
         :item="{
