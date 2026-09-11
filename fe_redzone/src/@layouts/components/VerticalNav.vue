@@ -1,5 +1,4 @@
 <script setup>
-import { PerfectScrollbar } from 'vue3-perfect-scrollbar'
 import { useDisplay } from 'vuetify'
 import logo from '@images/logo.png'
 
@@ -61,12 +60,13 @@ const handleNavScroll = evt => {
       <div class="vertical-nav-items-shadow" />
     </slot>
     <slot name="nav-items" :update-is-vertical-nav-scrolled="updateIsVerticalNavScrolled">
-      <PerfectScrollbar tag="ul" class="nav-items" :options="{ wheelPropagation: false }"
-        @ps-scroll-y="handleNavScroll">
+      <ul class="nav-items sidebar-scroll" aria-label="Main navigation" tabindex="0"
+        @scroll="handleNavScroll">
         <slot />
-      </PerfectScrollbar>
+      </ul>
     </slot>
 
+    <div class="sidebar-bottom-space" aria-hidden="true" />
     <slot name="after-nav-items" />
   </Component>
 </template>
@@ -82,6 +82,7 @@ const handleNavScroll = evt => {
   display: flex;
   flex-direction: column;
   block-size: 100%;
+  block-size: 100dvh;
   inline-size: variables.$layout-vertical-nav-width;
   inset-block-start: 0;
   inset-inline-start: 0;
@@ -90,6 +91,7 @@ const handleNavScroll = evt => {
 
   .nav-header {
     display: flex;
+    flex-shrink: 0;
     align-items: center;
 
     .header-action {
@@ -102,13 +104,27 @@ const handleNavScroll = evt => {
   }
 
   .nav-items {
-    block-size: 100%;
+    flex: 1 1 0;
+    min-block-size: 0;
+    block-size: auto;
 
     // ℹ️ We no loner needs this overflow styles as perfect scrollbar applies it
     // overflow-x: hidden;
 
     // // ℹ️ We used `overflow-y` instead of `overflow` to mitigate overflow x. Revert back if any issue found.
     // overflow-y: auto;
+  }
+
+  .nav-items.sidebar-scroll {
+    overflow-y: auto;
+    overflow-x: hidden;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+    padding-block-end: 16px;
+  }
+
+  .sidebar-bottom-space {
+    flex: 0 0 calc(32px + env(safe-area-inset-bottom, 0px));
   }
 
   .nav-item-title {

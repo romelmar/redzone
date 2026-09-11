@@ -1,0 +1,1 @@
+<p>Hello {{ $soa['subscriber']->name }},</p><p>Your billing statement for {{ $soa['billing_period']->format('F Y') }} is attached.</p><p>Total due: PHP {{ number_format($soa['total_due'], 2) }}</p><p>Thank you,<br>REDZONE</p>

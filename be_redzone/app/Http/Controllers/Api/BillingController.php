@@ -30,8 +30,8 @@ class BillingController extends Controller
     $sortDir = strtolower($request->get('sort_dir', 'asc')) === 'asc' ? 'asc' : 'desc';
 
     $subscriptions = Subscription::query()
-        ->with(['subscriber', 'plan', 'rates', 'addons', 'payments', 'serviceCredits'])
-        ->where('active', true)
+        ->with(['subscriber', 'plan', 'rates', 'events', 'addons', 'payments', 'serviceCredits'])
+        ->when(!$request->routeIs('billing-statements.index'), fn ($q) => $q->where('active', true))
         ->when($search !== '', function ($q) use ($search) {
             $q->where(function ($qq) use ($search) {
                 if (ctype_digit($search)) {
@@ -94,6 +94,7 @@ class BillingController extends Controller
      */
     public function soaJson(Request $request, Subscription $subscription, BillingService $billing)
     {
+        $request->validate(['month' => 'sometimes|date']);
         $monthParam = $request->get('month', now()->startOfMonth()->toDateString());
         $billMonth = Carbon::parse($monthParam)->startOfMonth();
         $billingPeriod = $subscription->billingPeriodForMonth($billMonth);
@@ -129,6 +130,7 @@ class BillingController extends Controller
      */
     public function soaPdf(Request $request, Subscription $subscription, BillingService $billing)
     {
+        $request->validate(['month' => 'sometimes|date']);
         $monthParam = $request->get('month', now()->startOfMonth()->toDateString());
         $billMonth = Carbon::parse($monthParam)->startOfMonth();
         $billingPeriod = $subscription->billingPeriodForMonth($billMonth);
@@ -166,7 +168,7 @@ class BillingController extends Controller
         ])->setPaper('a4');
 
         return $pdf->download(
-            'SOA-' . $subscription->id . '-' . $billMonth->format('Y-m') . '.pdf'
+            'Billing-statement-' . $subscription->id . '-' . $billMonth->format('Y-m') . '.pdf'
         );
     }
 
@@ -175,6 +177,7 @@ class BillingController extends Controller
      */
     public function sendSoa(Request $request, Subscription $subscription, BillingService $billing)
     {
+        $request->validate(['month' => 'sometimes|date']);
         if (!$subscription->subscriber || !$subscription->subscriber->email) {
             return response()->json(['message' => 'Subscriber has no email'], 422);
         }
@@ -215,18 +218,18 @@ class BillingController extends Controller
             'printed_at' => now(),
         ])->output();
 
-        Mail::send('emails.soa', ['soa' => $soa], function ($message) use ($subscription, $pdf, $billMonth) {
+        Mail::send('emails.billing-statement', ['soa' => $soa], function ($message) use ($subscription, $pdf, $billMonth) {
             $message
                 ->to($subscription->subscriber->email)
-                ->subject('Statement of Account - ' . $billMonth->format('F Y'))
+                ->subject('Billing statement - ' . $billMonth->format('F Y'))
                 ->attachData(
                     $pdf,
-                    'SOA-' . $subscription->id . '-' . $billMonth->format('Y-m') . '.pdf',
+                    'Billing-statement-' . $subscription->id . '-' . $billMonth->format('Y-m') . '.pdf',
                     ['mime' => 'application/pdf']
                 );
         });
 
-        return response()->json(['message' => 'SOA emailed successfully']);
+        return response()->json(['message' => 'Billing statement emailed successfully']);
     }
 
     private function generateBillNo(Subscription $subscription, Carbon $billMonth): string

@@ -68,15 +68,22 @@ Route::apiResource('serviceCredits', ServiceCreditController::class);
 
 
 Route::get('/dues', [BillingController::class, 'subscribersWithDues']);
+Route::get('/billing-statements', [BillingController::class, 'subscribersWithDues'])->name('billing-statements.index');
+Route::get('/subscriptions/{subscription}/billing-statement', [BillingController::class, 'soaPdf']);
+Route::post('/subscriptions/{subscription}/billing-statement/email', [BillingController::class, 'sendSoa'])->middleware('throttle:10,1');
+Route::get('/subscriptions/{subscription}/account-statement', [\App\Http\Controllers\Api\AccountStatementController::class, 'preview']);
+Route::get('/subscriptions/{subscription}/account-statement/pdf', [\App\Http\Controllers\Api\AccountStatementController::class, 'download']);
+Route::post('/subscriptions/{subscription}/account-statement/email', [\App\Http\Controllers\Api\AccountStatementController::class, 'email'])->middleware('throttle:10,1');
+
 // Route::get('/subscriptions/{subscription}/soa-json', [BillingController::class, 'soaJson']);
 // Route::get('/subscriptions/{subscription}/soa', [BillingController::class, 'soaPdf']);
-// Route::post('/subscriptions/{subscription}/send-soa', [BillingController::class, 'sendSoa']);
+// Route::post('/subscriptions/{subscription}/send-soa', [BillingController::class, 'sendSoa'])->middleware('throttle:10,1');
 // Route::get('/subscriptions/{subscription}/soa', [SOAController::class, 'download'])->name('subscriptions.soa.download');
 // Route::post('/subscriptions/{subscription}/soa/email', [SOAController::class, 'email'])->name('subscriptions.soa.email');
 
 Route::get('/subscriptions/{subscription}/soa-json', [BillingController::class, 'soaJson']);
 Route::get('/subscriptions/{subscription}/soa',      [BillingController::class, 'soaPdf']);
-Route::post('/subscriptions/{subscription}/send-soa', [BillingController::class, 'sendSoa']);
+Route::post('/subscriptions/{subscription}/send-soa', [BillingController::class, 'sendSoa'])->middleware('throttle:10,1');
 
 Route::get('/subscriptions/{subscription}/history', [SubscriptionHistoryController::class, 'index']);
 Route::post('/subscriptions/{subscription}/assign-collector', [SubscriptionController::class, 'assignCollector']);

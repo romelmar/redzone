@@ -6,9 +6,9 @@
 .v-application .v-card { border: 1px solid var(--workspace-border); border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,.025); }
 .layout-vertical-nav { border-inline-end: 1px solid var(--workspace-border); box-shadow: none !important; }
 .layout-vertical-nav .nav-header { justify-content: center; padding-block: 14px; }
-.layout-vertical-nav .nav-link { margin-block: 3px; }
-.layout-vertical-nav .nav-link a { min-height: 42px; border-radius: 8px !important; font-size: 13px; }
-.layout-vertical-nav .nav-section-title { margin-block-start: 22px !important; font-size: 10px; letter-spacing: .08em; }
+.layout-nav-type-vertical .layout-vertical-nav .nav-link { margin-block: 1px; }
+.layout-nav-type-vertical .layout-vertical-nav .nav-link a { min-height: 34px; block-size: 34px; padding-block: 4px; padding-inline: 12px; margin-block-end: 2px; border-radius: 8px !important; font-size: 13px; }
+.layout-nav-type-vertical .layout-vertical-nav .nav-section-title { margin-block-start: 14px !important; margin-block-end: 6px; font-size: 10px; letter-spacing: .08em; }
 .layout-vertical-nav .nav-item-icon { font-size: 20px; }
 .workspace-context span { display: block; font-size: 9px; letter-spacing: .12em; opacity: .6; }
 .workspace-context strong { display: block; font-size: 14px; margin-top: 3px; font-weight: 600; }

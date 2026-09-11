@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="utf-8">
-    <title>Statement of Account</title>
+    <title>Billing Statement</title>
     <style>
         body {
             font-family: Arial, Helvetica, sans-serif;
@@ -184,7 +184,7 @@
 
             <td class="header-right">
                 <div class="highlight">{{ config('app.name', 'Redzone Wireless Internet Services') }}</div>
-                <div>Brgy. Poblacion, Leon, Iloilo</div>
+                <div>Brgy. Poblacion, Leon, Iloilo </div>
                 <div>Email: leauncesan@yahoo.com</div>
                 <div>Contact: +63 930 211 4082</div>
             </td>
@@ -200,10 +200,10 @@
                     <p>BIR TBCP No. 11-074-06-13-R0711</p>
                     <p class="small">NTC VAS CERT No. RB-VAS-2022-078/NEW</p>
                 </td>
-                <td> 
+                <td>
                     <p> TIN: 156-539-786-00000 / </p>
                     <p> &nbsp; &nbsp; &nbsp; &nbsp; 156-539-786-00001 </p>
-                   </td>
+                </td>
                 <td>
                     <p>Date Printed: {{ \Carbon\Carbon::parse($printed_at)->format('F d, Y') }}</p>
 
@@ -218,7 +218,7 @@
         <p>Name:<strong> {{ $subscription->subscriber->name }}</strong></p>
         <p>Address:<strong> {{ $subscription->subscriber->address ?? 'N/A' }}</strong></p>
         <p>Contact:<strong> {{ $subscription->subscriber->phone ?? 'N/A' }}</strong></p>
-        <p>Internet Plan:<strong> {{  $subscription->plan->name  ?? 'N/A' }}</strong></p>
+        <p>Internet Plan:<strong> {{ $subscription->plan->name ?? 'N/A' }}</strong></p>
         <div class="summary">
             <h3>Statement Summary</h3>
 
@@ -299,7 +299,7 @@
     </div>
 
     <div class="soa-info">
-        <h1>Statement of Account</h1>
+        <h1>Billing Statement</h1>
         <table>
             <tr>
                 <td><strong>Bill Number:</strong></td>
@@ -311,7 +311,7 @@
             </tr>
             <tr>
                 <td><strong>Account No:</strong></td>
-                <td>{{ $subscription->subscriber->id}}</td>
+                <td>{{ $subscription->subscriber->id }}</td>
             </tr>
 
 

@@ -672,6 +672,7 @@ onMounted(async () => {
                     >
                   </VListItem>
 
+                  <VListItem :to="{ path: '/statements', query: { search: String(s.id) } }"><VListItemTitle>Download / email statements</VListItemTitle></VListItem>
                   <VListItem @click="openBillingPreview(s)">
                     <VListItemTitle>Billing Preview</VListItemTitle>
                   </VListItem>
@@ -855,7 +856,7 @@ onMounted(async () => {
   <!-- Dialog: Billing Preview / SOA -->
   <VDialog v-model="billingDialog" max-width="700">
     <VCard>
-      <VCardTitle>Statement of Account Preview</VCardTitle>
+      <VCardTitle>Billing Statement Preview</VCardTitle>
       <VCardText>
         <div v-if="billingLoading" class="text-center py-6">
           <VProgressCircular indeterminate color="primary" />

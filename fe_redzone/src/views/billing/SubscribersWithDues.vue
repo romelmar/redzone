@@ -1,11 +1,15 @@
 <script setup>
-import { ref, onMounted, watch } from "vue"
+import { ref, onMounted, onBeforeUnmount, watch } from "vue"
 import debounce from "lodash/debounce"
 import api from "@/plugins/axios"
+import { useRoute } from 'vue-router'
+import StatementActions from '@/components/StatementActions.vue'
+import { peso, businessDate, apiError } from '@/helpers/operations'
+const route = useRoute()
+const error = ref('')
 
 const loading = ref(false)
-const emailingId = ref(null)
-const downloadingId = ref(null)
+
 
 const dues = ref([])
 
@@ -15,15 +19,18 @@ const totalItems = ref(0)
 const sortBy = ref('subscriber')
 const sortDir = ref('asc')
 
-const search = ref("")
-const month = ref(new Date().toISOString().slice(0, 10).replace(/\d{2}$/, "01"))
+const search = ref(String(route.query.search || ""))
+const month = ref(businessDate().slice(0, 7) + "-01")
 
-const money = v => `₱${Number(v ?? 0).toFixed(2)}`
+const money = peso
 
+let requestNumber = 0
 const load = async () => {
+  const request = ++requestNumber
   loading.value = true
+  error.value = ""
   try {
-    const { data } = await api.get("/api/dues", {
+    const { data } = await api.get("/api/billing-statements", {
       params: {
         page: page.value,
         per_page: perPage.value,
@@ -31,15 +38,14 @@ const load = async () => {
         month: month.value || undefined,
         sort_by: sortBy.value,
         sort_dir: sortDir.value,
-        sort_by: sortBy.value,
-        sort_dir: sortDir.value,
       },
     })
 
+    if (request !== requestNumber) return
     dues.value = data?.data ?? []
     totalItems.value = data?.total ?? dues.value.length
-  } finally {
-    loading.value = false
+  } catch (e) { if (request === requestNumber) error.value = apiError(e) } finally {
+    if (request === requestNumber) loading.value = false
   }
 }
 
@@ -55,7 +61,7 @@ watch(month, () => {
   load()
 })
 
-watch(page, load)
+
 
 const setSort = (column) => {
   if (sortBy.value === column) {
@@ -73,53 +79,14 @@ const sortIcon = (column) => {
   return sortDir.value === 'asc' ? 'mdi-arrow-up' : 'mdi-arrow-down'
 }
 
-const downloadSOA = async (subscriptionId) => {
-  downloadingId.value = subscriptionId
-  try {
-    const response = await api.get(`/api/subscriptions/${subscriptionId}/soa`, {
-      params: {
-        month: month.value || undefined,
-      },
-      responseType: "blob",
-    })
-
-    const blob = new Blob([response.data], { type: "application/pdf" })
-    const url = window.URL.createObjectURL(blob)
-
-    const a = document.createElement("a")
-    a.href = url
-    a.download = `SOA-${subscriptionId}.pdf`
-    a.click()
-
-    window.URL.revokeObjectURL(url)
-  } catch (e) {
-    alert("Failed to download SOA.")
-  } finally {
-    downloadingId.value = null
-  }
-}
-
-const emailSOA = async (subscriptionId) => {
-  emailingId.value = subscriptionId
-  try {
-    await api.post(`/api/subscriptions/${subscriptionId}/send-soa`, null, {
-      params: {
-        month: month.value || undefined,
-      },
-    })
-    alert("SOA email sent successfully.")
-  } catch (e) {
-    alert("Failed to send SOA email.")
-  } finally {
-    emailingId.value = null
-  }
-}
-
+onBeforeUnmount(() => { debouncedLoad.cancel(); requestNumber++ })
 onMounted(load)
 </script>
 
 <template>
   <div class="card">
+    <VAlert v-if="error" type="error" class="ma-4">{{ error }}</VAlert>
+    <p class="px-4 pt-4 mb-0">Prepare billing statements and statements of account for active and disconnected subscriptions. For collection follow-up, use <RouterLink to="/account-reports?type=overdue">Overdue accounts</RouterLink>.</p>
     <div class="px-4 pt-4 d-flex flex-column flex-md-row gap-3 align-center justify-space-between mb-2">
       <div class="d-flex flex-wrap gap-3 align-center">
         <VTextField
@@ -189,31 +156,13 @@ onMounted(load)
             </td>
 
             <td class="text-end">
-              <VBtn
-                size="small"
-                color="primary"
-                class="me-2"
-                :loading="downloadingId === d.subscription_id"
-                @click="downloadSOA(d.subscription_id)"
-              >
-                Download SOA
-              </VBtn>
-
-              <VBtn
-                size="small"
-                color="success"
-                variant="outlined"
-                :loading="emailingId === d.subscription_id"
-                @click="emailSOA(d.subscription_id)"
-              >
-                Email SOA
-              </VBtn>
+              <StatementActions :subscription-id="d.subscription_id" :email="d.subscriber_email" :month="month" />
             </td>
           </tr>
 
           <tr v-if="!loading && dues.length === 0">
             <td colspan="10" class="text-center text-muted py-4">
-              No outstanding dues match these filters.
+              No subscriptions match these filters.
             </td>
           </tr>
         </tbody>

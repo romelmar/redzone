@@ -7,6 +7,7 @@ import SubscriptionsIndex from '@/pages/Subscriptions/Index.vue';
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
+    { path: '/subscribers-with-dues', redirect: to => ({ path: '/statements', query: to.query }) },
     { path: '/', redirect: '/dashboard', meta: { requiresAuth: true } },
     {
       path: '/',
@@ -57,7 +58,7 @@ const router = createRouter({
       component: () => import('../layouts/default.vue'),
       children: [
         {
-          path: 'subscribers-with-dues',
+          path: 'statements',
           component: () => import('@/views/billing/SubscribersWithDues.vue'),
           meta: { requiresAuth: true },
         },
