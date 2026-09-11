@@ -268,7 +268,7 @@ onMounted(async () => {
                     </VBtn>
                 </div>
             </div>
-            <VTable>
+            <VProgressLinear v-if="loading" indeterminate aria-label="Loading assignments" /><VTable :aria-busy="loading">
                 <thead>
                     <tr>
                         <th style="width: 40px;">

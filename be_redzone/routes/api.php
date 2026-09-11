@@ -38,6 +38,8 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 
 Route::middleware('auth:sanctum')->group(function () {
 Route::get('/operations/dashboard', [\App\Http\Controllers\Api\OperationsController::class, 'dashboard']);
+Route::get('/operations/accounts/print', [\App\Http\Controllers\Api\OperationsController::class, 'printAccounts']);
+Route::get('/operations/accounts', [\App\Http\Controllers\Api\OperationsController::class, 'accounts']);
 Route::get('/operations/reconciliation', [\App\Http\Controllers\Api\OperationsController::class, 'reconciliation']);
 Route::post('/operations/remittances', [\App\Http\Controllers\Api\OperationsController::class, 'remit']);
 Route::post('/operations/remittances/{remittance}/void', [\App\Http\Controllers\Api\OperationsController::class, 'voidRemittance']);

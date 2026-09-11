@@ -8,6 +8,33 @@ use Carbon\Carbon;
 
 class BillingService
 {
+    private function hasRecurringCharge(Subscription $sub, Carbon $month): bool
+    {
+        $monthEnd = $month->copy()->endOfMonth();
+        if ($sub->start_date->gt($monthEnd) || ($sub->end_date && $sub->end_date->lt($month))) return false;
+
+        $events = $sub->events->whereIn('type', ['activate', 'deactivate'])->sortBy('event_at')->values();
+        if (!$sub->active) {
+            $cutoff = $sub->deactivated_at ?? $sub->end_date;
+            if ($cutoff) {
+                $events = $events->push(new \App\Models\SubscriptionEvent(['type' => 'deactivate', 'event_at' => $cutoff]))->sortBy('event_at');
+            } elseif (!$events->contains('type', 'deactivate')) {
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    'deactivated_at' => "Subscription #{$sub->id} is inactive but has no disconnection date. Record the actual date before calculating billing.",
+                ]);
+            }
+        }
+        $activeFrom = $sub->start_date;
+        foreach ($events as $event) {
+            if ($event->type === 'deactivate') {
+                if ($activeFrom && $activeFrom->lte($monthEnd) && $event->event_at->gte($month)) return true;
+                $activeFrom = null;
+            } elseif ($activeFrom === null) {
+                $activeFrom = $event->event_at;
+            }
+        }
+        return $activeFrom !== null && $activeFrom->lte($monthEnd);
+    }
   /**
    * Returns an array with:
    * - previous_balance
@@ -22,6 +49,10 @@ public function computeFor(Subscription $sub, Carbon $billMonth): array
     $rate = $sub->rateForMonth($billMonth);
     $planPrice = $rate['price'];
     $discount = $rate['discount'];
+    if (!$this->hasRecurringCharge($sub, $billMonth)) {
+        $planPrice = 0;
+        $discount = 0;
+    }
 
     $addons = $sub->relationLoaded('addons') ? $sub->addons : $sub->addons()->get();
     $payments = $sub->relationLoaded('payments') ? $sub->payments : $sub->payments()->get();
@@ -40,10 +71,6 @@ public function computeFor(Subscription $sub, Carbon $billMonth): array
         ->sum('amount'), 2);
 
     $currentBill = max(0, $planPrice - $discount + $addonsTotal);
-    if ($billMonth->lt($sub->start_date->copy()->startOfMonth())
-        || ($sub->end_date && $billMonth->gt($sub->end_date->copy()->startOfMonth()))) {
-        $currentBill = 0;
-    }
 
     $prevCharges = (float) $this->lifetimeChargesUntil($sub, $billMonth, $addons, $serviceCredits);
 
@@ -111,10 +138,11 @@ public function computeFor(Subscription $sub, Carbon $billMonth): array
       $rate = $sub->rateForMonth($cursor);
       $planPrice = $rate['price'];
       $discount = $rate['discount'];
-
-      if (!$sub->end_date || $cursor->lte($sub->end_date->copy()->startOfMonth())) {
-          $sum += max(0, $planPrice - $discount + $monthAddons) - $outageCredit;
+      if (!$this->hasRecurringCharge($sub, $cursor)) {
+          $planPrice = 0;
+          $discount = 0;
       }
+      $sum += max(0, $planPrice - $discount + $monthAddons) - $outageCredit;
       $cursor->addMonth();
     }
 

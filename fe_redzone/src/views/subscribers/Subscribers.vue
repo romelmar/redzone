@@ -212,7 +212,7 @@ onMounted(load);
 
         <!-- Autocomplete Search -->
         <VAutocomplete v-model="selectedSubscriber" v-model:search="searchText" label="Search subscribers" clearable
-            variant="outlined" prepend-inner-icon="mdi-magnify" :items="searchResults" item-title="name" return-object
+            variant="outlined" prepend-inner-icon="bx-search" :items="searchResults" item-title="name" return-object
             :loading="searchLoading" :no-filter="true" @update:search="onSearch"
             @update:modelValue="applySearchSelection" hide-details>
             <template #selection="{ item }">
@@ -231,14 +231,15 @@ onMounted(load);
         <!-- Table -->
         <div class="table-responsive text-nowrap">
 
-            <VTable>
+            <VProgressLinear v-if="loading" indeterminate color="primary" aria-label="Loading records" />
+      <VTable :aria-busy="loading">
                 <thead>
                     <tr>
-                        <th @click="setSort('id')" class="sortable-header text-nowrap">ID <VIcon size="16" class="ms-1">{{ sortIcon('id') }}</VIcon></th>
-                        <th @click="setSort('name')" class="sortable-header">Name <VIcon size="16" class="ms-1">{{ sortIcon('name') }}</VIcon></th>
-                        <th @click="setSort('email')" class="sortable-header">Email <VIcon size="16" class="ms-1">{{ sortIcon('email') }}</VIcon></th>
-                        <th @click="setSort('phone')" class="sortable-header">Phone <VIcon size="16" class="ms-1">{{ sortIcon('phone') }}</VIcon></th>
-                        <th @click="setSort('subscriptions_count')" class="sortable-header">Subscriptions <VIcon size="16" class="ms-1">{{ sortIcon('subscriptions_count') }}</VIcon></th>
+                        <th tabindex="0" @keydown.enter.prevent="setSort('id')" @keydown.space.prevent="setSort('id')" @click="setSort('id')" class="sortable-header text-nowrap">ID <VIcon size="16" class="ms-1">{{ sortIcon('id') }}</VIcon></th>
+                        <th tabindex="0" @keydown.enter.prevent="setSort('name')" @keydown.space.prevent="setSort('name')" @click="setSort('name')" class="sortable-header">Name <VIcon size="16" class="ms-1">{{ sortIcon('name') }}</VIcon></th>
+                        <th tabindex="0" @keydown.enter.prevent="setSort('email')" @keydown.space.prevent="setSort('email')" @click="setSort('email')" class="sortable-header">Email <VIcon size="16" class="ms-1">{{ sortIcon('email') }}</VIcon></th>
+                        <th tabindex="0" @keydown.enter.prevent="setSort('phone')" @keydown.space.prevent="setSort('phone')" @click="setSort('phone')" class="sortable-header">Phone <VIcon size="16" class="ms-1">{{ sortIcon('phone') }}</VIcon></th>
+                        <th tabindex="0" @keydown.enter.prevent="setSort('subscriptions_count')" @keydown.space.prevent="setSort('subscriptions_count')" @click="setSort('subscriptions_count')" class="sortable-header">Subscriptions <VIcon size="16" class="ms-1">{{ sortIcon('subscriptions_count') }}</VIcon></th>
                         <th class="text-end">Actions</th>
                     </tr>
                 </thead>
@@ -264,7 +265,7 @@ onMounted(load);
 
                     <tr v-if="!loading && subscribers.length === 0">
                         <td colspan="6" class="text-center text-muted py-4">
-                            No subscribers found
+                            No subscribers match this view. Try another search.
                         </td>
                     </tr>
                 </tbody>

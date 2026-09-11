@@ -105,6 +105,7 @@ const router = createRouter({
       component: () => import('../layouts/default.vue'),
       children: [
         { path: 'reconciliation', component: () => import('@/pages/operations/Reconciliation.vue'), meta: { requiresAuth: true } },
+        { path: 'account-reports', component: () => import('@/pages/operations/AccountReports.vue'), meta: { requiresAuth: true } },
         { path: 'payment-audit', component: () => import('@/pages/operations/PaymentAudit.vue'), meta: { requiresAuth: true } },
         {
           path: 'dashboard',
@@ -116,9 +117,14 @@ const router = createRouter({
 
 
     {
-      path: "/collections/assign-collector",
-      name: "collections-assign-collector",
-      component: () => import("@/pages/collections/AssignCollector.vue"),
+      path: "/collections",
+      component: () => import('../layouts/default.vue'),
+      children: [{
+        path: 'assign-collector',
+        name: 'collections-assign-collector',
+        component: () => import('@/pages/collections/AssignCollector.vue'),
+        meta: { requiresAuth: true },
+      }],
     },
 
 

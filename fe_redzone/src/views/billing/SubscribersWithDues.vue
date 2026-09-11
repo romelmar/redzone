@@ -127,7 +127,7 @@ onMounted(load)
           label="Search (subscriber, email, plan)"
           variant="outlined"
           density="comfortable"
-          prepend-inner-icon="mdi-magnify"
+          prepend-inner-icon="bx-search"
           hide-details
           style="min-width: 260px"
         />
@@ -145,18 +145,19 @@ onMounted(load)
     </div>
 
     <div class="table-responsive text-nowrap">
-      <VTable>
+      <VProgressLinear v-if="loading" indeterminate color="primary" aria-label="Loading records" />
+      <VTable :aria-busy="loading">
         <thead>
           <tr>
-            <th @click="setSort('subscriber')" class="sortable-header">Subscriber <VIcon size="16" class="ms-1">{{ sortIcon('subscriber') }}</VIcon></th>
-            <th @click="setSort('plan')" class="sortable-header">Plan <VIcon size="16" class="ms-1">{{ sortIcon('plan') }}</VIcon></th>
-            <th @click="setSort('billing_period')" class="sortable-header">Billing Period <VIcon size="16" class="ms-1">{{ sortIcon('billing_period') }}</VIcon></th>
-            <th @click="setSort('previous_balance')" class="sortable-header">Previous Balance <VIcon size="16" class="ms-1">{{ sortIcon('previous_balance') }}</VIcon></th>
-            <th @click="setSort('monthly_fee')" class="sortable-header">Monthly Fee <VIcon size="16" class="ms-1">{{ sortIcon('monthly_fee') }}</VIcon></th>
+            <th tabindex="0" @keydown.enter.prevent="setSort('subscriber')" @keydown.space.prevent="setSort('subscriber')" @click="setSort('subscriber')" class="sortable-header">Subscriber <VIcon size="16" class="ms-1">{{ sortIcon('subscriber') }}</VIcon></th>
+            <th tabindex="0" @keydown.enter.prevent="setSort('plan')" @keydown.space.prevent="setSort('plan')" @click="setSort('plan')" class="sortable-header">Plan <VIcon size="16" class="ms-1">{{ sortIcon('plan') }}</VIcon></th>
+            <th tabindex="0" @keydown.enter.prevent="setSort('billing_period')" @keydown.space.prevent="setSort('billing_period')" @click="setSort('billing_period')" class="sortable-header">Billing Period <VIcon size="16" class="ms-1">{{ sortIcon('billing_period') }}</VIcon></th>
+            <th tabindex="0" @keydown.enter.prevent="setSort('previous_balance')" @keydown.space.prevent="setSort('previous_balance')" @click="setSort('previous_balance')" class="sortable-header">Previous Balance <VIcon size="16" class="ms-1">{{ sortIcon('previous_balance') }}</VIcon></th>
+            <th tabindex="0" @keydown.enter.prevent="setSort('monthly_fee')" @keydown.space.prevent="setSort('monthly_fee')" @click="setSort('monthly_fee')" class="sortable-header">Monthly Fee <VIcon size="16" class="ms-1">{{ sortIcon('monthly_fee') }}</VIcon></th>
             <th>Add-ons</th>
             <th>Credits</th>
             <th>Payments</th>
-            <th @click="setSort('total_due')" class="sortable-header">Total Due <VIcon size="16" class="ms-1">{{ sortIcon('total_due') }}</VIcon></th>
+            <th tabindex="0" @keydown.enter.prevent="setSort('total_due')" @keydown.space.prevent="setSort('total_due')" @click="setSort('total_due')" class="sortable-header">Total Due <VIcon size="16" class="ms-1">{{ sortIcon('total_due') }}</VIcon></th>
             <th class="text-end">Actions</th>
           </tr>
         </thead>
@@ -212,7 +213,7 @@ onMounted(load)
 
           <tr v-if="!loading && dues.length === 0">
             <td colspan="10" class="text-center text-muted py-4">
-              No dues found
+              No outstanding dues match these filters.
             </td>
           </tr>
         </tbody>

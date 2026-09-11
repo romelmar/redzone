@@ -183,29 +183,30 @@ onMounted(load)
     </VCardTitle>
 
     <div class="table-responsive text-nowrap">
-      <VTable>
+      <VProgressLinear v-if="loading" indeterminate color="primary" aria-label="Loading records" />
+      <VTable :aria-busy="loading">
         <thead>
           <tr>
-            <th @click="setSort('subscription_name')" class="sortable-header">
+            <th tabindex="0" @keydown.enter.prevent="setSort('subscription_name')" @keydown.space.prevent="setSort('subscription_name')" @click="setSort('subscription_name')" class="sortable-header">
               <div class="d-flex align-center">
                 Subscription
                 <VIcon size="16" class="ms-1">{{ sortIcon('subscription_name') }}</VIcon>
               </div>
             </th>
-            <th @click="setSort('name')" class="sortable-header">
+            <th tabindex="0" @keydown.enter.prevent="setSort('name')" @keydown.space.prevent="setSort('name')" @click="setSort('name')" class="sortable-header">
               <div class="d-flex align-center">
                 Name
                 <VIcon size="16" class="ms-1">{{ sortIcon('name') }}</VIcon>
               </div>
             </th>
             <th>Description</th>
-            <th @click="setSort('amount')" class="sortable-header">
+            <th tabindex="0" @keydown.enter.prevent="setSort('amount')" @keydown.space.prevent="setSort('amount')" @click="setSort('amount')" class="sortable-header">
               <div class="d-flex align-center">
                 Amount
                 <VIcon size="16" class="ms-1">{{ sortIcon('amount') }}</VIcon>
               </div>
             </th>
-            <th @click="setSort('credit_month')" class="sortable-header">
+            <th tabindex="0" @keydown.enter.prevent="setSort('credit_month')" @keydown.space.prevent="setSort('credit_month')" @click="setSort('credit_month')" class="sortable-header">
               <div class="d-flex align-center">
                 Bill Month
                 <VIcon size="16" class="ms-1">{{ sortIcon('credit_month') }}</VIcon>
@@ -227,7 +228,7 @@ onMounted(load)
             </td>
           </tr>
           <tr v-if="!loading && addons.length === 0">
-            <td colspan="6" class="text-center text-muted py-4">No add-ons found</td>
+            <td colspan="6" class="text-center text-muted py-4">No add-ons match this view.</td>
           </tr>
         </tbody>
       </VTable>

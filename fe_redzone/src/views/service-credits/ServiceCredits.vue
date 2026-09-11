@@ -101,13 +101,14 @@ onMounted(load)
         </VCardTitle>
 
         <div class="table-responsive text-nowrap">
-            <VTable>
+            <VProgressLinear v-if="loading" indeterminate color="primary" aria-label="Loading records" />
+      <VTable :aria-busy="loading">
                 <thead>
                     <tr>
-                        <th @click="setSort('subscription_name')" class="sortable-header">Subscription <VIcon size="16" class="ms-1">{{ sortIcon('subscription_name') }}</VIcon></th>
-                        <th @click="setSort('credit_month')" class="sortable-header">Bill Month <VIcon size="16" class="ms-1">{{ sortIcon('credit_month') }}</VIcon></th>
-                        <th @click="setSort('outage_days')" class="sortable-header">Outage Days <VIcon size="16" class="ms-1">{{ sortIcon('outage_days') }}</VIcon></th>
-                        <th @click="setSort('reason')" class="sortable-header">Reason <VIcon size="16" class="ms-1">{{ sortIcon('reason') }}</VIcon></th>
+                        <th tabindex="0" @keydown.enter.prevent="setSort('subscription_name')" @keydown.space.prevent="setSort('subscription_name')" @click="setSort('subscription_name')" class="sortable-header">Subscription <VIcon size="16" class="ms-1">{{ sortIcon('subscription_name') }}</VIcon></th>
+                        <th tabindex="0" @keydown.enter.prevent="setSort('credit_month')" @keydown.space.prevent="setSort('credit_month')" @click="setSort('credit_month')" class="sortable-header">Bill Month <VIcon size="16" class="ms-1">{{ sortIcon('credit_month') }}</VIcon></th>
+                        <th tabindex="0" @keydown.enter.prevent="setSort('outage_days')" @keydown.space.prevent="setSort('outage_days')" @click="setSort('outage_days')" class="sortable-header">Outage Days <VIcon size="16" class="ms-1">{{ sortIcon('outage_days') }}</VIcon></th>
+                        <th tabindex="0" @keydown.enter.prevent="setSort('reason')" @keydown.space.prevent="setSort('reason')" @click="setSort('reason')" class="sortable-header">Reason <VIcon size="16" class="ms-1">{{ sortIcon('reason') }}</VIcon></th>
                         <th class="text-end">Actions</th>
                     </tr>
                 </thead>
@@ -123,7 +124,7 @@ onMounted(load)
                         </td>
                     </tr>
                     <tr v-if="!loading && credits.length === 0">
-                        <td colspan="5" class="text-center text-muted py-4">No credits found</td>
+                        <td colspan="5" class="text-center text-muted py-4">No service credits match this view.</td>
                     </tr>
                 </tbody>
             </VTable>

@@ -1,134 +1,44 @@
 <script setup>
-import { useTheme } from 'vuetify'
-import VerticalNavSectionTitle from '@/@layouts/components/VerticalNavSectionTitle.vue'
-
+import { computed } from 'vue'
+import { useRoute } from 'vue-router'
 import VerticalNavLayout from '@layouts/components/VerticalNavLayout.vue'
 import VerticalNavLink from '@layouts/components/VerticalNavLink.vue'
-
-// Components
-import Footer from '@/layouts/components/Footer.vue'
-import NavbarThemeSwitcher from '@/layouts/components/NavbarThemeSwitcher.vue'
-import UserProfile from '@/layouts/components/UserProfile.vue'
-
-const vuetifyTheme = useTheme()
-
-
+import VerticalNavSectionTitle from '@layouts/components/VerticalNavSectionTitle.vue'
+import Footer from './Footer.vue'
+import NavbarThemeSwitcher from './NavbarThemeSwitcher.vue'
+import UserProfile from './UserProfile.vue'
+const route = useRoute()
+const groups = [
+  { title: 'Overview', items: [['Dashboard', 'bx-grid-alt', '/dashboard', 'Monitor collections, balances, and upcoming due dates.']] },
+  { title: 'Customers & services', items: [['Subscribers', 'bx-user', '/subscribers', 'Manage customer records and contact information.'], ['Subscriptions', 'bx-wifi', '/subscriptions', 'Manage connections, billing, and service status.'], ['Plans', 'bx-list-ul', '/plans', 'Maintain your service plans and monthly rates.'], ['Add-ons', 'bx-extension', '/addons', 'Manage additional services and charges.']] },
+  { title: 'Billing & collections', items: [['Payments', 'bx-wallet-alt', '/payments', 'Record payments and review collection history.'], ['Service credits', 'bx-coin', '/service-credits', 'Review billing credits and account adjustments.'], ['Subscribers with dues', 'bx-receipt', '/subscribers-with-dues', 'Review outstanding dues before following up.'], ['Collection sheet', 'bx-file', '/collection-sheet', 'Prepare collection routes and assign collectors.'], ['Cash reconciliation', 'bx-check-shield', '/reconciliation', 'Compare recorded collections with actual remittances.']] },
+  { title: 'Reports & oversight', items: [['Overdue accounts', 'bx-time-five', '/account-reports?type=overdue', 'Review overdue balances.'], ['Disconnected accounts', 'bx-power-off', '/account-reports?type=disconnected', 'Review disconnected services.'], ['Payment audit', 'bx-history', '/payment-audit', 'Trace payment changes and corrections.']] },
+]
+const current = computed(() => groups.flatMap(g => g.items).find(i => i[2] === route.fullPath) || groups.flatMap(g => g.items).find(i => i[2].split('?')[0] === route.path))
+const ownHeading = computed(() => ['/dashboard', '/account-reports', '/reconciliation', '/payment-audit'].includes(route.path))
 </script>
-
 <template>
   <VerticalNavLayout>
-    <!-- 👉 navbar -->
     <template #navbar="{ toggleVerticalOverlayNavActive }">
-      <div class="d-flex h-100 align-center">
-        <!-- 👉 Vertical nav toggle in overlay mode -->
-        <IconBtn class="ms-n3 d-lg-none" @click="toggleVerticalOverlayNavActive(true)">
-          <VIcon icon="bx-menu" />
-        </IconBtn>
-
-
-
+      <div class="d-flex h-100 align-center gap-3">
+        <IconBtn class="d-lg-none" aria-label="Open navigation" @click="toggleVerticalOverlayNavActive(true)"><VIcon icon="bx-menu" /></IconBtn>
+        <div class="workspace-context"><span>REDZONE / WORKSPACE</span><strong>{{ current?.[0] || 'Account management' }}</strong></div>
         <VSpacer />
-
-        <IconBtn class="me-2" href="https://github.com/themeselection/sneat-vuetify-vuejs-admin-template-free"
-          target="_blank" rel="noopener noreferrer">
-          <VIcon icon="bxl-github" />
-        </IconBtn>
-
-        <IconBtn class="me-2">
-          <VIcon icon="bx-bell" />
-        </IconBtn>
-
-        <NavbarThemeSwitcher class="me-2" />
-
+        <NavbarThemeSwitcher aria-label="Change color theme" />
         <UserProfile />
       </div>
     </template>
-
     <template #vertical-nav-content>
-      
-      <VerticalNavLink :item="{
-        title: 'Dashboard',
-        icon: 'bx-home',
-        to: '/dashboard',
-      }" />
-      <VerticalNavLink :item="{
-        title: 'Subscribers',
-        icon: 'bx-user',
-        to: '/subscribers',
-        exact: false, // stays active for /subscribers/* too
-      }" />
-      <VerticalNavLink :item="{
-        title: 'Subscriptions',
-        icon: 'bx-file',
-        to: '/subscriptions',
-        exact: false, // stays active for /subscribers/* too
-      }" />
-      <VerticalNavLink :item="{
-        title: 'Plans',
-        icon: 'bx-list-ul',
-        to: '/plans',
-      }" />
-      <VerticalNavLink :item="{
-        title: 'Addons',
-        icon: 'bx-extension', 
-        to: '/addons',
-      }" />
-      <VerticalNavLink :item="{
-        title: 'Payments',
-        icon: 'bx-wallet-alt',
-        to: '/payments',
-      }" />
-      <VerticalNavLink :item="{
-        title: 'Service Credits',
-        icon: 'bx-coin',
-        to: '/service-credits',
-      }" />
-      <VerticalNavLink :item="{
-        title: 'Subsribers With Dues',
-        icon: 'bx-coin',
-        to: '/subscribers-with-dues',
-      }" />
-      <VerticalNavLink :item="{
-        title: 'Collection Sheet',
-        icon: 'bx-file',
-        to: '/collection-sheet',
-      }" />
-      <VerticalNavLink :item="{ title: 'Cash Reconciliation', icon: 'bx-check-shield', to: '/reconciliation' }" />
-      <VerticalNavLink :item="{ title: 'Payment Audit', icon: 'bx-history', to: '/payment-audit' }" />
-      
-      <!-- <VerticalNavLink
-        :item="{
-          title: 'Account Settings',
-          icon: 'mdi-account-cog-outline',
-          to: '/account-settings',
-        }"
-      /> -->
-
-
-
-      <!-- 👉 User Interface -->
-
+      <template v-for="group in groups" :key="group.title">
+        <VerticalNavSectionTitle :item="{ heading: group.title }" />
+        <VerticalNavLink v-for="item in group.items" :key="item[2]" :item="{ title: item[0], icon: item[1], to: item[2] }" />
+      </template>
     </template>
-
-
-
-    <!-- 👉 Pages -->
-    <slot />
-
-    <!-- 👉 Footer -->
-    <template #footer>
-      <Footer />
-    </template>
+    <a class="skip-link" href="#workspace-main">Skip to page content</a>
+    <div id="workspace-main" class="enterprise-page" tabindex="-1">
+      <header v-if="!ownHeading" class="page-heading"><h1>{{ current?.[0] || 'Collector assignments' }}</h1><p>{{ current?.[3] || 'Organize collection responsibilities and assignments.' }}</p></header>
+      <slot />
+    </div>
+    <template #footer><Footer /></template>
   </VerticalNavLayout>
 </template>
-
-<style lang="scss" scoped>
-.meta-key {
-  border: thin solid rgba(var(--v-border-color), var(--v-border-opacity));
-  border-radius: 6px;
-  block-size: 1.5625rem;
-  line-height: 1.3125rem;
-  padding-block: 0.125rem;
-  padding-inline: 0.25rem;
-}
-</style>

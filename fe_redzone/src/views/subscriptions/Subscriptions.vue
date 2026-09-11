@@ -442,7 +442,7 @@ onMounted(async () => {
           label="Search (subscriber, plan, status)"
           variant="outlined"
           density="comfortable"
-          prepend-inner-icon="mdi-magnify"
+          prepend-inner-icon="bx-search"
           hide-details
           style="min-width: 260px"
         />
@@ -513,7 +513,8 @@ onMounted(async () => {
 
     <!-- Table -->
     <div class="table-responsive text-nowrap">
-      <VTable>
+      <VProgressLinear v-if="loading" indeterminate color="primary" aria-label="Loading records" />
+      <VTable :aria-busy="loading">
         <thead>
           <tr>
             <th class="text-start" style="width: 40px">
@@ -525,7 +526,7 @@ onMounted(async () => {
               />
             </th>
 
-            <th @click="setSort('subscriber_name')" class="sortable-header">
+            <th tabindex="0" @keydown.enter.prevent="setSort('subscriber_name')" @keydown.space.prevent="setSort('subscriber_name')" @click="setSort('subscriber_name')" class="sortable-header">
               <div class="d-flex align-center">
                 Subscriber
                 <VIcon size="16" class="ms-1">{{
@@ -534,7 +535,7 @@ onMounted(async () => {
               </div>
             </th>
 
-            <th @click="setSort('plan_name')" class="sortable-header">
+            <th tabindex="0" @keydown.enter.prevent="setSort('plan_name')" @keydown.space.prevent="setSort('plan_name')" @click="setSort('plan_name')" class="sortable-header">
               <div class="d-flex align-center">
                 Plan
                 <VIcon size="16" class="ms-1">{{
@@ -543,7 +544,7 @@ onMounted(async () => {
               </div>
             </th>
 
-            <th @click="setSort('start_date')" class="sortable-header">
+            <th tabindex="0" @keydown.enter.prevent="setSort('start_date')" @keydown.space.prevent="setSort('start_date')" @click="setSort('start_date')" class="sortable-header">
               <div class="d-flex align-center">
                 Start
                 <VIcon size="16" class="ms-1">{{
@@ -552,7 +553,7 @@ onMounted(async () => {
               </div>
             </th>
 
-            <th @click="setSort('monthly_discount')" class="sortable-header">
+            <th tabindex="0" @keydown.enter.prevent="setSort('monthly_discount')" @keydown.space.prevent="setSort('monthly_discount')" @click="setSort('monthly_discount')" class="sortable-header">
               <div class="d-flex align-center">
                 Discount
                 <VIcon size="16" class="ms-1">{{
@@ -561,7 +562,7 @@ onMounted(async () => {
               </div>
             </th>
 
-            <th @click="setSort('current_balance')" class="sortable-header">
+            <th tabindex="0" @keydown.enter.prevent="setSort('current_balance')" @keydown.space.prevent="setSort('current_balance')" @click="setSort('current_balance')" class="sortable-header">
               <div class="d-flex align-center">
                 Balance
                 <VIcon size="16" class="ms-1">{{
@@ -570,7 +571,7 @@ onMounted(async () => {
               </div>
             </th>
 
-            <th @click="setSort('status')" class="sortable-header">
+            <th tabindex="0" @keydown.enter.prevent="setSort('status')" @keydown.space.prevent="setSort('status')" @click="setSort('status')" class="sortable-header">
               <div class="d-flex align-center">
                 Status
                 <VIcon size="16" class="ms-1">{{ sortIcon("status") }}</VIcon>
@@ -689,7 +690,7 @@ onMounted(async () => {
 
           <tr v-if="!loading && subscriptions.length === 0">
             <td colspan="8" class="text-center text-muted py-4">
-              No subscriptions found
+              No subscriptions match these filters. Adjust your search or status.
             </td>
           </tr>
         </tbody>
@@ -750,7 +751,7 @@ onMounted(async () => {
               v-model:search="searchText"
               label="Subscriber"
               variant="outlined"
-              prepend-inner-icon="mdi-magnify"
+              prepend-inner-icon="bx-search"
               :items="searchResults.length ? searchResults : subscribers"
               item-title="name"
               item-value="id"

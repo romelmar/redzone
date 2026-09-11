@@ -267,7 +267,7 @@ onMounted(() => {
           label="Search subscription / remarks"
           variant="outlined"
           density="comfortable"
-          prepend-inner-icon="mdi-magnify"
+          prepend-inner-icon="bx-search"
           clearable
           hide-details
           style="min-width: 260px"
@@ -311,13 +311,14 @@ onMounted(() => {
     </VCardTitle>
 
     <div class="table-responsive text-nowrap">
-      <VTable>
+      <VProgressLinear v-if="loading" indeterminate color="primary" aria-label="Loading records" />
+      <VTable :aria-busy="loading">
         <thead>
           <tr>
-            <th @click="setSort('subscriber_name')" class="sortable-header">Subscription <VIcon size="16" class="ms-1">{{ sortIcon('subscriber_name') }}</VIcon></th>
-            <th @click="setSort('amount')" class="sortable-header">Amount <VIcon size="16" class="ms-1">{{ sortIcon('amount') }}</VIcon></th>
-            <th @click="setSort('payment_date')" class="sortable-header">Paid At <VIcon size="16" class="ms-1">{{ sortIcon('payment_date') }}</VIcon></th>
-            <th @click="setSort('payment_type')" class="sortable-header">Payment Type <VIcon size="16" class="ms-1">{{ sortIcon('payment_type') }}</VIcon></th>
+            <th tabindex="0" @keydown.enter.prevent="setSort('subscriber_name')" @keydown.space.prevent="setSort('subscriber_name')" @click="setSort('subscriber_name')" class="sortable-header">Subscription <VIcon size="16" class="ms-1">{{ sortIcon('subscriber_name') }}</VIcon></th>
+            <th tabindex="0" @keydown.enter.prevent="setSort('amount')" @keydown.space.prevent="setSort('amount')" @click="setSort('amount')" class="sortable-header">Amount <VIcon size="16" class="ms-1">{{ sortIcon('amount') }}</VIcon></th>
+            <th tabindex="0" @keydown.enter.prevent="setSort('payment_date')" @keydown.space.prevent="setSort('payment_date')" @click="setSort('payment_date')" class="sortable-header">Paid At <VIcon size="16" class="ms-1">{{ sortIcon('payment_date') }}</VIcon></th>
+            <th tabindex="0" @keydown.enter.prevent="setSort('payment_type')" @keydown.space.prevent="setSort('payment_type')" @click="setSort('payment_type')" class="sortable-header">Payment Type <VIcon size="16" class="ms-1">{{ sortIcon('payment_type') }}</VIcon></th>
             <th>Remarks</th>
             <th class="text-end">Actions</th>
           </tr>
@@ -361,7 +362,7 @@ onMounted(() => {
           </tr>
 
           <tr v-if="!loading && payments.length === 0">
-            <td colspan="6" class="text-center text-muted py-4">No payments found</td>
+            <td colspan="6" class="text-center text-muted py-4">No payments match these filters. Try another date or search.</td>
           </tr>
         </tbody>
       </VTable>
@@ -398,7 +399,7 @@ onMounted(() => {
 
   <VDialog v-model="dialog" persistent max-width="700">
     <VCard>
-      <VCardTitle>{{ form.id ? "Edit Payment" : "Add Payment wwww" }}</VCardTitle>
+      <VCardTitle>{{ form.id ? "Edit Payment" : "Add Payment" }}</VCardTitle>
 
       <VCardText>
         <VTextField v-model="form.collector_name" label="Collected by" hint="Name of the person who received this payment." class="mb-3" />

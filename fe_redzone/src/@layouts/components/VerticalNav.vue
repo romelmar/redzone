@@ -26,7 +26,7 @@ const { mdAndDown } = useDisplay()
 const refNav = ref()
 const route = useRoute()
 
-watch(() => route.path, () => {
+watch(() => route.fullPath, () => {
   props.toggleIsOverlayNavActive(false)
 })
 
@@ -52,7 +52,7 @@ const handleNavScroll = evt => {
         <RouterLink to="/"  >
 
           <div class="center-container">
-            <img :src="logo" alt="Logo" height="120" />
+            <img :src="logo" alt="REDZONE home" height="76" />
           </div>
         </RouterLink>
       </slot>

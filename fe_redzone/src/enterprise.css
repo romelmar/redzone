@@ -1,0 +1,50 @@
+/* Shared REDZONE workspace presentation. Uses Vuetify theme colors in both modes. */
+:root { --workspace-border: rgba(var(--v-theme-on-surface), .10); }
+.v-application { font-size: 14px; }
+.v-application .v-btn { text-transform: none; letter-spacing: .01em; font-weight: 600; border-radius: 7px; }
+.v-application .v-field { border-radius: 8px; font-size: 14px; }
+.v-application .v-card { border: 1px solid var(--workspace-border); border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,.025); }
+.layout-vertical-nav { border-inline-end: 1px solid var(--workspace-border); box-shadow: none !important; }
+.layout-vertical-nav .nav-header { justify-content: center; padding-block: 14px; }
+.layout-vertical-nav .nav-link { margin-block: 3px; }
+.layout-vertical-nav .nav-link a { min-height: 42px; border-radius: 8px !important; font-size: 13px; }
+.layout-vertical-nav .nav-section-title { margin-block-start: 22px !important; font-size: 10px; letter-spacing: .08em; }
+.layout-vertical-nav .nav-item-icon { font-size: 20px; }
+.workspace-context span { display: block; font-size: 9px; letter-spacing: .12em; opacity: .6; }
+.workspace-context strong { display: block; font-size: 14px; margin-top: 3px; font-weight: 600; }
+.enterprise-page { max-width: 1680px; margin-inline: auto; outline: none; }
+.page-heading { margin-bottom: 24px; }
+.page-heading h1, .enterprise-page h1 { font-size: clamp(25px, 3vw, 32px) !important; font-weight: 650; letter-spacing: -.6px; line-height: 1.3; }
+.page-heading p { font-size: 14px; opacity: .65; margin-top: 8px; margin-bottom: 0; }
+.enterprise-page .card { background: rgb(var(--v-theme-surface)); border: 1px solid var(--workspace-border); border-radius: 12px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,.025); }
+.enterprise-page .card > .v-input { margin: 20px 20px 0; }
+.enterprise-page .v-card-title { padding: 20px 22px; font-size: 16px; font-weight: 600; white-space: normal; gap: 12px; flex-wrap: wrap; }
+.enterprise-page .v-table th { font-size: 12px !important; font-weight: 600 !important; background: rgba(var(--v-theme-on-surface), .035); white-space: nowrap; border-block-start: 1px solid var(--workspace-border); }
+.enterprise-page .v-table td { font-size: 13px; font-variant-numeric: tabular-nums; }
+.enterprise-page .v-table tbody tr:hover { background: rgba(var(--v-theme-primary), .035); }
+.enterprise-page .v-table td.text-end { white-space: nowrap; }
+.enterprise-page .table-responsive { overflow-x: auto; }
+.enterprise-page .v-pagination { padding-block: 8px; }
+.enterprise-page td[colspan].text-center { height: 130px; color: rgba(var(--v-theme-on-surface), .65); white-space: normal; }
+.enterprise-page .v-chip { font-weight: 600; font-size: 11px; }
+.v-dialog .v-card-title { padding: 24px 24px 16px; font-weight: 600; font-size: 20px; white-space: normal; }
+.v-dialog .v-card-actions { padding: 16px 24px 20px; border-top: 1px solid var(--workspace-border); gap: 8px; flex-wrap: wrap; }
+.v-dialog .v-card-text { padding-inline: 24px; }
+.v-dialog .v-table { overflow-x: auto; }
+.workspace-footer { display: flex; justify-content: space-between; gap: 12px; font-size: 11px; opacity: .6; padding-block: 16px; }
+a:focus-visible, button:focus-visible, th[tabindex]:focus-visible { outline: 2px solid rgb(var(--v-theme-primary)); outline-offset: 3px; }
+.skip-link { position: fixed; top: -100px; left: 16px; z-index: 9999; padding: 12px 18px; background: rgb(var(--v-theme-surface)); border-radius: 6px; }
+.skip-link:focus { top: 12px; }
+.redzone-login { min-height: 100vh; max-width: 1160px; margin: auto; display: grid; grid-template-columns: 1.1fr 1fr; gap: 80px; align-items: center; padding: 48px; }
+.login-intro h1 { font-size: clamp(32px, 4vw, 48px); line-height: 1.16; letter-spacing: -1.5px; margin: 16px 0; }
+.login-intro > p { opacity: .7; max-width: 380px; margin-bottom: 28px; line-height: 1.7; }
+.login-eyebrow { font-size: 10px; letter-spacing: .13em; font-weight: 700; color: rgb(var(--v-theme-primary)); margin-block: 12px; }
+.login-feature { display: flex; gap: 12px; align-items: center; margin-top: 14px; font-size: 13px; }
+.login-feature .v-icon { color: rgb(var(--v-theme-primary)); }
+.login-panel { padding: 28px 20px; }
+.login-panel h2 { font-size: 25px; letter-spacing: -.5px; margin-bottom: 10px; }
+.login-panel p { font-size: 13px; opacity: .7; line-height: 1.7; }
+.login-help { margin: 24px 0 0; text-align: center; }
+@media (max-width: 960px) { .redzone-login { gap: 30px; padding: 30px; } .enterprise-page .v-card-title > .d-flex { flex-wrap: wrap; } }
+@media (max-width: 600px) { .page-heading { margin-bottom: 18px; } .enterprise-page .v-card-title { padding: 16px; align-items: flex-start !important; } .enterprise-page .card > .v-input { margin: 16px 16px 0; } .enterprise-page .d-flex > .v-input { min-width: 0 !important; max-width: 100%; } .enterprise-page .v-card-title > .d-flex { width: 100%; } .enterprise-page .card > .d-flex { align-items: stretch !important; } .enterprise-page .card > .d-flex > .d-flex { width: 100%; } .enterprise-page .card > .d-flex .v-input { flex-basis: 100%; } .workspace-footer { flex-wrap: wrap; } .redzone-login { grid-template-columns: 1fr; padding: 24px 16px; gap: 16px; } .login-intro h1, .login-intro > p, .login-feature { display: none; } .login-intro { text-align: center; } .login-panel { padding: 16px 8px; } }
+@media (prefers-reduced-motion: reduce) { .v-application *, .v-overlay-container * { scroll-behavior: auto !important; transition-duration: 0s !important; animation-duration: 0s !important; } }

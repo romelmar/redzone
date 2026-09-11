@@ -108,15 +108,16 @@ onMounted(load)
 
         <VCardTitle class="d-flex justify-space-between align-center">
             <span>Plans</span>
-            <VBtn color="primary" @click="openCreate">Add Plans</VBtn>
+            <VBtn color="primary" @click="openCreate">Add Plan</VBtn>
         </VCardTitle>
 
         <div class="table-responsive text-nowrap">
-            <VTable>
+            <VProgressLinear v-if="loading" indeterminate color="primary" aria-label="Loading records" />
+      <VTable :aria-busy="loading">
                 <thead>
                     <tr>
-                        <th @click="setSort('name')" class="sortable-header">Name <VIcon size="16" class="ms-1">{{ sortIcon('name') }}</VIcon></th>
-                        <th @click="setSort('price')" class="sortable-header">Price <VIcon size="16" class="ms-1">{{ sortIcon('price') }}</VIcon></th>
+                        <th tabindex="0" @keydown.enter.prevent="setSort('name')" @keydown.space.prevent="setSort('name')" @click="setSort('name')" class="sortable-header">Name <VIcon size="16" class="ms-1">{{ sortIcon('name') }}</VIcon></th>
+                        <th tabindex="0" @keydown.enter.prevent="setSort('price')" @keydown.space.prevent="setSort('price')" @click="setSort('price')" class="sortable-header">Price <VIcon size="16" class="ms-1">{{ sortIcon('price') }}</VIcon></th>
                         <th>Description</th>
                         <th class="text-end">Actions</th>
                     </tr>
@@ -132,7 +133,7 @@ onMounted(load)
                         </td>
                     </tr>
                     <tr v-if="!loading && plans.length === 0">
-                        <td colspan="5" class="text-center text-muted py-4">No plans found</td>
+                        <td colspan="5" class="text-center text-muted py-4">No plans yet. Add a plan to start offering services.</td>
                     </tr>
                 </tbody>
             </VTable>

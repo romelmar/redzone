@@ -92,6 +92,68 @@ class OperationsTest extends TestCase
         }
         $this->postJson('/api/operations/remittances', [])->assertUnauthorized();
         $this->postJson('/api/operations/remittances/1/void', [])->assertUnauthorized();
+        $this->getJson('/api/operations/accounts/print?type=overdue')->assertUnauthorized();
+        $this->getJson('/api/operations/accounts?type=overdue')->assertUnauthorized();
+    }
+
+    public function test_account_management_filters_sorts_before_pagination_and_prints_the_same_full_result(): void
+    {
+        $sub = $this->setupAccount();
+        $small = Subscription::create(['subscriber_id' => $sub->subscriber_id, 'plan_id' => $sub->plan_id,
+            'start_date' => '2026-09-01', 'monthly_discount' => 400]);
+        $middle = Subscription::create(['subscriber_id' => $sub->subscriber_id, 'plan_id' => $sub->plan_id,
+            'start_date' => '2026-09-01', 'monthly_discount' => 300]);
+        $query = '?type=overdue&search=Subscriber&sort_by=overdue&sort_dir=desc&per_page=1&page=2';
+        $this->getJson('/api/operations/accounts'.$query)->assertOk()->assertJsonPath('total', 3)
+            ->assertJsonPath('data.0.subscription_id', $middle->id)->assertJsonPath('overdue_total', 800)
+            ->assertJsonPath('subscriber_count', 1)->assertJsonPath('last_page', 3);
+        $this->getJson('/api/operations/accounts?type=overdue&search=nonexistent')->assertOk()->assertJsonPath('total', 0);
+        $this->getJson('/api/operations/accounts?type=overdue&sort_by=invalid')->assertUnprocessable();
+        $pdf = \Mockery::mock(\Barryvdh\DomPDF\PDF::class);
+        $pdf->shouldReceive('setPaper')->once()->andReturnSelf();
+        $pdf->shouldReceive('stream')->once()->andReturn(response('PDF verified'));
+        \Barryvdh\DomPDF\Facade\Pdf::shouldReceive('loadView')->once()
+            ->with('pdf.account-status-report', \Mockery::on(function ($view) use ($sub, $small, $middle) {
+                $this->assertSame([$sub->id, $middle->id, $small->id], $view['rows']->pluck('subscription_id')->all());
+                $this->assertSame('subscriber', $view['search']);
+                return true;
+            }))->andReturn($pdf);
+        $this->get('/api/operations/accounts/print'.$query)->assertOk();
+    }
+
+    public function test_print_reports_include_all_matching_accounts_without_duplicate_combined_rows(): void
+    {
+        $sub = $this->setupAccount();
+        for ($i = 0; $i < 16; $i++) {
+            Subscription::create(['subscriber_id' => $sub->subscriber_id, 'plan_id' => $sub->plan_id, 'start_date' => '2026-09-01']);
+        }
+        $disconnected = Subscription::create(['subscriber_id' => $sub->subscriber_id, 'plan_id' => $sub->plan_id,
+            'start_date' => '2026-09-01', 'active' => false, 'deactivated_at' => now()]);
+        Payment::create(['subscription_id' => $disconnected->id, 'amount' => 500, 'payment_date' => '2026-09-08', 'payment_type' => 'payment']);
+        $sub->update(['active' => false, 'deactivated_at' => now()]);
+        foreach (['overdue' => 17, 'disconnected' => 2, 'both' => 18] as $type => $count) {
+            $pdf = \Mockery::mock(\Barryvdh\DomPDF\PDF::class);
+            $pdf->shouldReceive('setPaper')->with('a4', 'landscape')->once()->andReturnSelf();
+            $pdf->shouldReceive('stream')->once()->andReturn(response('PDF verified'));
+            \Barryvdh\DomPDF\Facade\Pdf::shouldReceive('loadView')->once()
+                ->with('pdf.account-status-report', \Mockery::on(function ($view) use ($count) {
+                    $this->assertCount($count, $view['rows']);
+                    $this->assertCount($count, $view['rows']->pluck('subscription_id')->unique());
+                    $this->assertSame('2026-09-08', $view['date']);
+                    return true;
+                }))->andReturn($pdf);
+            $this->get('/api/operations/accounts/print?type='.$type)->assertOk();
+        }
+    }
+
+    public function test_print_report_renders_a_real_pdf_and_validates_filters(): void
+    {
+        $this->setupAccount();
+        $response = $this->get('/api/operations/accounts/print?type=overdue&date=2026-09-08');
+        $response->assertOk()->assertHeader('Content-Type', 'application/pdf');
+        $this->assertStringStartsWith('%PDF-', $response->getContent());
+        $this->getJson('/api/operations/accounts/print?type=invalid')->assertUnprocessable();
+        $this->getJson('/api/operations/accounts/print?type=overdue&date=invalid')->assertUnprocessable();
     }
 
     public function test_reconciliation_groups_collector_capitalization_and_separates_payment_methods(): void

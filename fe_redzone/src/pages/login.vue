@@ -1,123 +1,31 @@
-<!-- <script setup>
-import AuthProvider from '@/views/pages/authentication/AuthProvider.vue'
-import logo from '@images/logo.svg?raw'
-
-const form = ref({
-  email: '',
-  password: '',
-  remember: false,
-})
-
-const isPasswordVisible = ref(false)
-</script> -->
-
 <script setup>
-import { useAuthStore } from '@/stores/auth'
-import { useToastStore } from '@/stores/toast'
 import { ref } from 'vue'
-import { useRouter } from 'vue-router'
-
+import { useRoute, useRouter } from 'vue-router'
+import { useAuthStore } from '@/stores/auth'
+import logo from '@images/logo.png'
+const auth = useAuthStore()
+const router = useRouter()
+const route = useRoute()
 const email = ref('')
 const password = ref('')
-
-const auth = useAuthStore()
-const toast = useToastStore()
-const router = useRouter()
-
-const handleLogin = async () => {
+const isPasswordVisible = ref(false)
+const loading = ref(false)
+const error = ref('')
+async function handleLogin() {
+  if (loading.value) return
+  loading.value = true
+  error.value = ''
   try {
     await auth.login({ email: email.value, password: password.value })
-    router.push('/dashboard')
-    toast.show('Login successful!', 'success')
-
-  } catch (error) {
-    const message = error?.response?.data?.message || error?.message || 'Login failed'
-    console.error(message)
-    toast.show('Login failed! ' + message, 'error')
-  }
+    await router.push('/dashboard')
+  } catch (e) {
+    error.value = e.response?.data?.message || 'Unable to sign in. Check your credentials and try again.'
+  } finally { loading.value = false }
 }
 </script>
-
 <template>
-  <div class="auth-wrapper d-flex align-center justify-center pa-4">
-    <VCard class="auth-card pa-4 pt-7" max-width="448">
-      <VCardItem class="justify-center">
-        <template #prepend>
-          <div class="d-flex">
-            <div class="d-flex text-primary" v-html="logo" />
-          </div>
-        </template>
-
-        <VCardTitle class="text-2xl font-weight-bold">
-          sneat
-        </VCardTitle>
-      </VCardItem>
-
-      <VCardText class="pt-2">
-        <h5 class="text-h5 mb-1">
-          Welcome to sneat! 👋🏻
-        </h5>
-        <p class="mb-0">
-          Please sign-in to your account and start the adventure
-        </p>
-      </VCardText>
-
-      <VCardText>
-        <VForm @submit.prevent="handleLogin">
-          <VRow>
-            <!-- email -->
-            <VCol cols="12">
-              <VTextField v-model="email" autofocus placeholder="johndoe@email.com" label="Email" type="email" />
-            </VCol>
-
-            <!-- password -->
-            <VCol cols="12">
-              <VTextField v-model="password" label="Password" placeholder="············"
-                :type="isPasswordVisible ? 'text' : 'password'"
-                :append-inner-icon="isPasswordVisible ? 'bx-hide' : 'bx-show'"
-                @click:append-inner="isPasswordVisible = !isPasswordVisible" />
-
-              <!-- remember me checkbox -->
-              <div class="d-flex align-center justify-space-between flex-wrap mt-1 mb-4">
-                <VCheckbox v-model="remember" label="Remember me" />
-
-                <RouterLink class="text-primary ms-2 mb-1" to="javascript:void(0)">
-                  Forgot Password?
-                </RouterLink>
-              </div>
-
-              <!-- login button -->
-              <VBtn block type="submit">
-                Login
-              </VBtn>
-            </VCol>
-
-            <!-- create account -->
-            <VCol cols="12" class="text-center text-base">
-              <span>New on our platform?</span>
-              <RouterLink class="text-primary ms-2" to="/register">
-                Create an account
-              </RouterLink>
-            </VCol>
-
-            <VCol cols="12" class="d-flex align-center">
-              <VDivider />
-              <span class="mx-4">or</span>
-              <VDivider />
-            </VCol>
-
-            <!-- auth providers -->
-            <VCol cols="12" class="text-center">
-              <AuthProvider />
-            </VCol>
-          </VRow>
-        </VForm>
-      </VCardText>
-    </VCard>
-
-  </div>
+  <main class="redzone-login">
+    <section class="login-intro"><img :src="logo" alt="REDZONE" width="140" /><div class="login-eyebrow">OPERATIONS WORKSPACE</div><h1>Your business.<br>Your network.<br>One workspace.</h1><p>Keep subscriber accounts, billing, and daily collections organized.</p><div class="login-feature"><VIcon icon="bx-user-check" /> Subscriber management</div><div class="login-feature"><VIcon icon="bx-wallet" /> Billing &amp; collections</div><div class="login-feature"><VIcon icon="bx-bar-chart-alt-2" /> Operational reporting</div></section>
+    <VCard class="login-panel" variant="flat"><VCardText><div class="login-eyebrow">WELCOME BACK</div><h2>Sign in to REDZONE</h2><p class="mb-6">Enter your staff account credentials to continue.</p><VAlert v-if="route.query.reason === 'session-expired' && !error" type="info" variant="tonal" class="mb-5">Your session has expired. Please sign in again.</VAlert><VAlert v-if="error" type="error" variant="tonal" class="mb-5" role="alert">{{ error }}</VAlert><form @submit.prevent="handleLogin"><VTextField v-model="email" label="Email address" type="email" autocomplete="username" autofocus required class="mb-5" :disabled="loading" /><VTextField v-model="password" label="Password" autocomplete="current-password" required class="mb-6" :disabled="loading" :type="isPasswordVisible ? 'text' : 'password'" :append-inner-icon="isPasswordVisible ? 'bx-hide' : 'bx-show'" @click:append-inner="isPasswordVisible = !isPasswordVisible" /><VBtn type="submit" block size="large" :loading="loading" :disabled="loading">Sign in</VBtn></form><p class="login-help">Need access or a password reset? Contact your system administrator.</p></VCardText></VCard>
+  </main>
 </template>
-
-<style lang="scss">
-@use "@core/scss/template/pages/page-auth.scss";
-</style>

@@ -30,6 +30,11 @@ onMounted(load)
         <VCol cols="12" sm="6" lg="3"><VCard class="pa-5"><div>Due within 7 days</div><h2 class="text-h4 my-2">{{ data.upcoming_count }}</h2><small>Active subscription due dates</small></VCard></VCol>
       </VRow>
       <div class="d-flex flex-wrap gap-3 my-6"><VBtn to="/payments">Record payment</VBtn><VBtn to="/reconciliation" variant="tonal">Reconcile collections</VBtn><VBtn to="/payment-audit" variant="outlined">Review payment history</VBtn></div>
+      <div class="d-flex flex-wrap gap-3 mb-5">
+        <VBtn variant="outlined" to="/account-reports?type=overdue">Manage overdue subscribers</VBtn>
+        <VBtn variant="outlined" to="/account-reports?type=disconnected">Manage disconnected accounts</VBtn>
+        <VBtn variant="text" to="/account-reports?type=both">Review combined report</VBtn>
+      </div>
       <VRow>
         <VCol cols="12" md="7"><VCard><VCardTitle>Largest overdue accounts</VCardTitle><VCardSubtitle class="pb-3">Includes inactive accounts with unpaid balances. Showing up to 15.</VCardSubtitle>
           <VTable><thead><tr><th>Subscriber</th><th>Status</th><th class="text-end">Overdue</th></tr></thead><tbody><tr v-for="row in data.overdue" :key="row.subscription_id"><td>{{ row.subscriber }}<small class="d-block">Subscription #{{ row.subscription_id }}</small></td><td>{{ row.active ? 'Active' : 'Inactive' }}</td><td class="text-end">{{ peso(row.amount) }}</td></tr><tr v-if="!data.overdue.length"><td colspan="3" class="pa-5">No overdue accounts.</td></tr></tbody></VTable>

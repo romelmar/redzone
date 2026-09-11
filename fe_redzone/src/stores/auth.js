@@ -13,6 +13,11 @@ export const useAuthStore = defineStore('auth', {
   },
 
   actions: {
+    clearSession() {
+      this.user = null
+      sessionStorage.removeItem('auth')
+      localStorage.removeItem('auth')
+    },
     async getUser() {
       try {
         this.loading = true
@@ -42,9 +47,21 @@ export const useAuthStore = defineStore('auth', {
     async logout() {
       try {
         this.loading = true
-        await api.post('/logout')
-        this.user = null
+        try {
+          await api.post('/logout', {}, { timeout: 15000 })
+        } catch (error) {
+          if (error.response?.status === 419) {
+            await api.get('/sanctum/csrf-cookie', { timeout: 15000 })
+            await api.post('/logout', {}, { timeout: 15000 })
+          } else {
+            throw error
+          }
+        }
+      } catch (error) {
+        // A 401 means the server session is already signed out.
+        if (error.response?.status !== 401) throw error
       } finally {
+        this.clearSession()
         this.loading = false
       }
     },

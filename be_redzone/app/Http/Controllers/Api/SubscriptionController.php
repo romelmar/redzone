@@ -337,15 +337,15 @@ public function options(Request $request)
      */
     public function deactivate(Subscription $subscription)
     {
-        Log::info('Deactivating subscription ID: ' . $subscription->id);
-        if (!$subscription->active) {
-            return response()->json(['message' => 'Already inactive'], 422);
-        }
-
-        $subscription->update([
-            'active'          => false,
-            'deactivated_at'  => now(),
-        ]);
+        $subscription->getConnection()->transaction(function () use ($subscription) {
+            $locked = Subscription::whereKey($subscription->id)->lockForUpdate()->firstOrFail();
+            abort_if(!$locked->active, 422, 'Already inactive');
+            $at = now();
+            $locked->update(['active' => false, 'deactivated_at' => $at]);
+            $locked->events()->create(['type' => 'deactivate', 'title' => 'Disconnected',
+                'description' => 'Recurring fees stop after this month.', 'event_at' => $at]);
+            $subscription->refresh();
+        });
 
         return response()->json([
             'message' => 'Subscription deactivated successfully.',
@@ -360,23 +360,23 @@ public function options(Request $request)
      */
     public function activate(Subscription $subscription)
     {
-        Log::info('subscription: ' . $subscription);
-        if ($subscription->active) {
-            return response()->json(['message' => 'Already active'], 422);
-        }
-
-        if (!$subscription->deactivated_at) {
-            return response()->json(['message' => 'Deactivate date missing.'], 422);
-        }
-
-        // Compute how many days subscription was inactive
-        $days = Carbon::parse($subscription->deactivated_at)->diffInDays(now());
-
-        $subscription->update([
-            'active'                  => true,
-            'reactivated_days_passed' => $days,
-            'deactivated_at'          => null, // clear
-        ]);
+        $days = $subscription->getConnection()->transaction(function () use ($subscription) {
+            $locked = Subscription::whereKey($subscription->id)->lockForUpdate()->firstOrFail();
+            abort_if($locked->active, 422, 'Already active');
+            $cutoff = $locked->deactivated_at ?? $locked->end_date;
+            abort_if(!$cutoff, 422, 'The actual disconnection date is required before reactivation.');
+            // Preserve legacy disconnections before clearing the current status fields.
+            $last = $locked->events()->whereIn('type', ['activate', 'deactivate'])->orderByDesc('event_at')->orderByDesc('id')->first();
+            if (!$last || $last->type !== 'deactivate') {
+                $locked->events()->create(['type' => 'deactivate', 'title' => 'Disconnected', 'event_at' => $cutoff]);
+            }
+            $at = now();
+            $days = (int) Carbon::parse($cutoff)->diffInDays($at);
+            $locked->update(['active' => true, 'deactivated_at' => null, 'end_date' => null, 'reactivated_days_passed' => $days]);
+            $locked->events()->create(['type' => 'activate', 'title' => 'Reconnected', 'event_at' => $at]);
+            $subscription->refresh();
+            return $days;
+        });
 
         return response()->json([
             'message' => 'Subscription activated successfully.',

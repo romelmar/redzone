@@ -238,7 +238,7 @@ onMounted(load)
           label="Search subscriber / plan / collector"
           variant="outlined"
           density="comfortable"
-          prepend-inner-icon="mdi-magnify"
+          prepend-inner-icon="bx-search"
           clearable
           hide-details
           style="min-width: 260px"
@@ -310,7 +310,8 @@ onMounted(load)
         </VBtn>
       </div>
 
-      <VTable>
+      <VProgressLinear v-if="loading" indeterminate color="primary" aria-label="Loading records" />
+      <VTable :aria-busy="loading">
         <thead>
           <tr>
             <th style="width: 40px">
@@ -321,15 +322,15 @@ onMounted(load)
                 density="compact"
               />
             </th>
-            <th @click="setSort('assignment_date')" class="sortable-header">Date <VIcon size="16" class="ms-1">{{ sortIcon('assignment_date') }}</VIcon></th>
-            <th @click="setSort('collector_name')" class="sortable-header">Collector <VIcon size="16" class="ms-1">{{ sortIcon('collector_name') }}</VIcon></th>
+            <th tabindex="0" @keydown.enter.prevent="setSort('assignment_date')" @keydown.space.prevent="setSort('assignment_date')" @click="setSort('assignment_date')" class="sortable-header">Date <VIcon size="16" class="ms-1">{{ sortIcon('assignment_date') }}</VIcon></th>
+            <th tabindex="0" @keydown.enter.prevent="setSort('collector_name')" @keydown.space.prevent="setSort('collector_name')" @click="setSort('collector_name')" class="sortable-header">Collector <VIcon size="16" class="ms-1">{{ sortIcon('collector_name') }}</VIcon></th>
             <th>Assignment</th>
-            <th @click="setSort('subscriber_name')" class="sortable-header">Subscriber <VIcon size="16" class="ms-1">{{ sortIcon('subscriber_name') }}</VIcon></th>
-            <th @click="setSort('plan_name')" class="sortable-header">Plan <VIcon size="16" class="ms-1">{{ sortIcon('plan_name') }}</VIcon></th>
-            <th @click="setSort('due_date')" class="sortable-header">Due Date <VIcon size="16" class="ms-1">{{ sortIcon('due_date') }}</VIcon></th>
-            <th @click="setSort('days_overdue')" class="sortable-header">Days Overdue <VIcon size="16" class="ms-1">{{ sortIcon('days_overdue') }}</VIcon></th>
-            <th @click="setSort('collection_type')" class="sortable-header">Status <VIcon size="16" class="ms-1">{{ sortIcon('collection_type') }}</VIcon></th>
-            <th @click="setSort('total_due')" class="sortable-header">Amount Due <VIcon size="16" class="ms-1">{{ sortIcon('total_due') }}</VIcon></th>
+            <th tabindex="0" @keydown.enter.prevent="setSort('subscriber_name')" @keydown.space.prevent="setSort('subscriber_name')" @click="setSort('subscriber_name')" class="sortable-header">Subscriber <VIcon size="16" class="ms-1">{{ sortIcon('subscriber_name') }}</VIcon></th>
+            <th tabindex="0" @keydown.enter.prevent="setSort('plan_name')" @keydown.space.prevent="setSort('plan_name')" @click="setSort('plan_name')" class="sortable-header">Plan <VIcon size="16" class="ms-1">{{ sortIcon('plan_name') }}</VIcon></th>
+            <th tabindex="0" @keydown.enter.prevent="setSort('due_date')" @keydown.space.prevent="setSort('due_date')" @click="setSort('due_date')" class="sortable-header">Due Date <VIcon size="16" class="ms-1">{{ sortIcon('due_date') }}</VIcon></th>
+            <th tabindex="0" @keydown.enter.prevent="setSort('days_overdue')" @keydown.space.prevent="setSort('days_overdue')" @click="setSort('days_overdue')" class="sortable-header">Days Overdue <VIcon size="16" class="ms-1">{{ sortIcon('days_overdue') }}</VIcon></th>
+            <th tabindex="0" @keydown.enter.prevent="setSort('collection_type')" @keydown.space.prevent="setSort('collection_type')" @click="setSort('collection_type')" class="sortable-header">Status <VIcon size="16" class="ms-1">{{ sortIcon('collection_type') }}</VIcon></th>
+            <th tabindex="0" @keydown.enter.prevent="setSort('total_due')" @keydown.space.prevent="setSort('total_due')" @click="setSort('total_due')" class="sortable-header">Amount Due <VIcon size="16" class="ms-1">{{ sortIcon('total_due') }}</VIcon></th>
             <th>Phone</th>
             <th>Address</th>
             <th class="text-end">Actions</th>

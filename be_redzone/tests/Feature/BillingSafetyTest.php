@@ -21,6 +21,39 @@ class BillingSafetyTest extends TestCase
         return Subscription::create(['subscriber_id' => $subscriber->id, 'plan_id' => $plan->id, 'start_date' => '2026-01-31']);
     }
 
+    public function test_disconnection_stops_recurring_fees_and_reconnection_preserves_the_gap(): void
+    {
+        $this->travelTo(Carbon::parse('2026-02-10'));
+        $sub = $this->subscription();
+        $this->postJson('/api/subscriptions/'.$sub->id.'/deactivate')->assertOk();
+        $billing = app(BillingService::class);
+        $march = $billing->computeFor($sub->fresh(), Carbon::parse('2026-03-01'));
+        $this->assertEquals(620, $march['total_due']);
+        $this->assertEquals(0, $march['msf']);
+        $this->assertEquals(0, $march['current_bill']);
+        Payment::create(['subscription_id' => $sub->id, 'amount' => 100, 'payment_date' => '2026-03-15']);
+        $this->assertEquals(520, $billing->computeFor($sub->fresh(), Carbon::parse('2026-04-01'))['total_due']);
+        $this->travelTo(Carbon::parse('2026-05-10'));
+        $this->postJson('/api/subscriptions/'.$sub->id.'/activate')->assertOk();
+        $this->assertEquals(830, $billing->computeFor($sub->fresh(), Carbon::parse('2026-05-01'))['total_due']);
+        $this->assertEquals(0, $billing->computeFor($sub->fresh(), Carbon::parse('2026-04-01'))['msf']);
+        $this->travelTo(Carbon::parse('2026-06-10'));
+        $this->postJson('/api/subscriptions/'.$sub->id.'/deactivate')->assertOk();
+        $this->assertEquals(1140, $billing->computeFor($sub->fresh(), Carbon::parse('2026-08-01'))['total_due']);
+    }
+
+    public function test_existing_disconnection_date_is_used_and_saved_before_reactivation(): void
+    {
+        $sub = $this->subscription();
+        $sub->update(['active' => false, 'deactivated_at' => '2026-02-10']);
+        $billing = app(BillingService::class);
+        $this->assertEquals(620, $billing->computeFor($sub->fresh(), Carbon::parse('2026-04-01'))['total_due']);
+        $this->travelTo(Carbon::parse('2026-05-10'));
+        $this->postJson('/api/subscriptions/'.$sub->id.'/activate')->assertOk();
+        $this->assertEquals(930, $billing->computeFor($sub->fresh(), Carbon::parse('2026-05-01'))['total_due']);
+        $this->assertEquals(0, $billing->computeFor($sub->fresh(), Carbon::parse('2026-03-01'))['msf']);
+    }
+
     public function test_business_routes_require_authentication(): void
     {
         foreach (['subscribers', 'subscriptions', 'payments', 'plans', 'dues', 'collection-sheet', 'serviceCredits'] as $path) {
