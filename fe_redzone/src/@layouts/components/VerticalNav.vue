@@ -46,7 +46,7 @@ const handleNavScroll = evt => {
     },
   ]">
     <!-- 👉 Header -->
-    <div class="nav-header">
+    <div class="nav-header sidebar-brand">
       <slot name="nav-header">
         <RouterLink to="/"  >
 
@@ -56,9 +56,7 @@ const handleNavScroll = evt => {
         </RouterLink>
       </slot>
     </div>
-    <slot name="before-nav-items">
-      <div class="vertical-nav-items-shadow" />
-    </slot>
+    <slot name="before-nav-items" />
     <slot name="nav-items" :update-is-vertical-nav-scrolled="updateIsVerticalNavScrolled">
       <ul class="nav-items sidebar-scroll" aria-label="Main navigation" tabindex="0"
         @scroll="handleNavScroll">
@@ -83,6 +81,7 @@ const handleNavScroll = evt => {
   flex-direction: column;
   block-size: 100%;
   block-size: 100dvh;
+  overflow: hidden;
   inline-size: variables.$layout-vertical-nav-width;
   inset-block-start: 0;
   inset-inline-start: 0;
@@ -113,6 +112,13 @@ const handleNavScroll = evt => {
 
     // // ℹ️ We used `overflow-y` instead of `overflow` to mitigate overflow x. Revert back if any issue found.
     // overflow-y: auto;
+  }
+
+  .nav-header.sidebar-brand {
+    position: relative;
+    z-index: 2;
+    flex: 0 0 auto;
+    background: rgb(var(--v-theme-surface));
   }
 
   .nav-items.sidebar-scroll {
@@ -158,7 +164,8 @@ const handleNavScroll = evt => {
 .center-container {
   /* This centers anything inside it that behaves like text (which images do) */
   text-align: center;
-  margin-top: 20px;
+  margin-top: 0;
   /* Add some space above */
 }
+.center-container img { display: block; }
 </style>
