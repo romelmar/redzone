@@ -13,17 +13,21 @@ use Illuminate\Support\Facades\Log;
 
 class CollectionController extends Controller
 {
-public function collectionSheet(Request $request, BillingService $billing)
-{
-    $type = $request->get('type', 'due');
-    $search = trim((string) $request->get('search', ''));
-    $collectorName = trim((string) $request->get('collector_name', ''));
-    $assignmentDate = $request->get('assignment_date', now()->toDateString());
-    $assignmentStatus = $request->get('assignment_status');
-    $perPage = (int) $request->get('per_page', 10);
-    $page = (int) $request->get('page', 1);
+    public function collectionSheet(Request $request, BillingService $billing)
+    {
+        $type = $request->get('type', 'due');
+        $search = trim((string) $request->get('search', ''));
+        $collectorName = trim((string) $request->get('collector_name', ''));
+        $assignmentDate = $request->get('assignment_date', now()->toDateString());
+        $assignmentStatus = $request->get('assignment_status');
+        $perPage = (int) $request->get('per_page', 10);
+        $page = (int) $request->get('page', 1);
+
+        // --------------------------------------------------------------
         $sortBy = $request->get('sort_by', 'assignment_date');
         $sortDir = strtolower($request->get('sort_dir', 'asc')) === 'asc' ? 'asc' : 'desc';
+        // ---------------------------------------------------------------
+
 
         $assignmentDateCarbon = \Carbon\Carbon::parse($assignmentDate);
         $billMonth = $assignmentDateCarbon->copy()->startOfMonth();
@@ -100,42 +104,56 @@ public function collectionSheet(Request $request, BillingService $billing)
         });
 
         if ($type === 'due') {
-            $rows = $rows->filter(fn ($r) =>
+            $rows = $rows->filter(
+                fn($r) =>
                 $r['collection_type'] === 'due' && $r['total_due'] > 0
             );
         } elseif ($type === 'overdue') {
-            $rows = $rows->filter(fn ($r) =>
+            $rows = $rows->filter(
+                fn($r) =>
                 $r['collection_type'] === 'overdue' && $r['total_due'] > 0
             );
         } elseif ($type === 'disconnected') {
-            $rows = $rows->filter(fn ($r) =>
+            $rows = $rows->filter(
+                fn($r) =>
                 $r['collection_type'] === 'disconnected'
             );
         }
 
         if ($collectorName !== '') {
-            $rows = $rows->filter(fn ($r) =>
+            $rows = $rows->filter(
+                fn($r) =>
                 str_contains(strtolower($r['collector_name'] ?? ''), strtolower($collectorName))
             );
         }
 
         if ($assignmentStatus === 'assigned') {
-            $rows = $rows->filter(fn ($r) => $r['assignment_status'] === 'assigned');
+            $rows = $rows->filter(fn($r) => $r['assignment_status'] === 'assigned');
         } elseif ($assignmentStatus === 'unassigned') {
-            $rows = $rows->filter(fn ($r) => $r['assignment_status'] === 'unassigned');
+            $rows = $rows->filter(fn($r) => $r['assignment_status'] === 'unassigned');
         }
+
+        // $rows = $rows->values();
 
         if (in_array($sortBy, ['assignment_date', 'collector_name', 'subscriber_name', 'plan_name', 'due_date', 'days_overdue', 'assignment_status', 'total_due'], true)) {
             $rows = $sortDir === 'asc' ? $rows->sortBy($sortBy) : $rows->sortByDesc($sortBy);
         }
-    return response()->json([
-        'data' => $paginatedRows,
-        'total' => $total,
-        'current_page' => $page,
-        'per_page' => $perPage,
-        'last_page' => (int) ceil($total / $perPage),
-    ]);
-}
+
+
+        $total = $rows->count();
+
+        $paginatedRows = $rows
+            ->slice(($page - 1) * $perPage, $perPage)
+            ->values();
+
+        return response()->json([
+            'data' => $paginatedRows,
+            'total' => $total,
+            'current_page' => $page,
+            'per_page' => $perPage,
+            'last_page' => (int) ceil($total / $perPage),
+        ]);
+    }
 
 
 
