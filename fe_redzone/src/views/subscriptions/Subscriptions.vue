@@ -1,6 +1,7 @@
 <script setup>
 import { ref, onMounted, watch, computed } from "vue";
-import axios from "axios";
+import axios from "@/plugins/axios";
+import { apiError } from "@/helpers/operations";
 import { formatIsoToReadable } from "@/helpers/dateUtils";
 
 import {
@@ -21,8 +22,8 @@ import debounce from "lodash/debounce";
 // STATE
 // ─────────────────────────────────────────────
 const loading = ref(false);
-const saving = ref(false)
-const formError = ref("")
+const saving = ref(false);
+const formError = ref("");
 const dialog = ref(false);
 
 const subscriptions = ref([]);
@@ -55,6 +56,12 @@ const billingData = ref(null);
 const historyDialog = ref(false);
 const historyLoading = ref(false);
 const historyEvents = ref([]);
+const historyError = ref("");
+const historySubscription = ref(null);
+const historyPage = ref(1);
+const historyDirection = ref("desc");
+const historyResult = ref({ total: 0, last_page: 1, total_received: 0 });
+let historyRequest = 0;
 
 // Autocomplete (dialog)
 const searchText = ref("");
@@ -246,7 +253,7 @@ const onPickSubscriber = (subscriber) => {
 // CRUD
 // ─────────────────────────────────────────────
 const openCreate = () => {
-  formError.value = ""
+  formError.value = "";
   selectedSubscriber.value = null;
   searchText.value = "";
   searchResults.value = [...subscribers.value];
@@ -290,35 +297,39 @@ const openEdit = (s) => {
 };
 
 const save = async () => {
-  if (saving.value) return
-  saving.value = true
-  formError.value = ""
+  if (saving.value) return;
+  saving.value = true;
+  formError.value = "";
   try {
-  if (!form.value.subscriber_id) {
-    alert("Please select a subscriber.");
-    return;
-  }
-  if (!form.value.plan_id) {
-    alert("Please select a plan.");
-    return;
-  }
+    if (!form.value.subscriber_id) {
+      alert("Please select a subscriber.");
+      return;
+    }
+    if (!form.value.plan_id) {
+      alert("Please select a plan.");
+      return;
+    }
 
-  const payload = { ...form.value };
-  payload.status = form.value.active ? "active" : "inactive";
+    const payload = { ...form.value };
+    payload.status = form.value.active ? "active" : "inactive";
 
-  if (form.value.id) {
-    await updateSubscription(form.value.id, payload);
-  } else {
-    await createSubscription(payload);
-  }
+    if (form.value.id) {
+      await updateSubscription(form.value.id, payload);
+    } else {
+      await createSubscription(payload);
+    }
 
-  dialog.value = false;
-  await load();
-
+    dialog.value = false;
+    await load();
   } catch (error) {
-    formError.value = Object.values(error.response?.data?.errors || {}).flat().join(" ") || error.response?.data?.message || "Unable to save. Please try again."
+    formError.value =
+      Object.values(error.response?.data?.errors || {})
+        .flat()
+        .join(" ") ||
+      error.response?.data?.message ||
+      "Unable to save. Please try again.";
   } finally {
-    saving.value = false
+    saving.value = false;
   }
 };
 
@@ -372,17 +383,40 @@ const openBillingPreview = async (s) => {
 // ─────────────────────────────────────────────
 // HISTORY TIMELINE
 // ─────────────────────────────────────────────
-const openHistory = async (s) => {
-  historyDialog.value = true;
+const loadPaymentHistory = async (nextPage = 1) => {
+  const request = ++historyRequest;
+  const subscriptionId = historySubscription.value.id;
   historyLoading.value = true;
+  historyError.value = "";
   historyEvents.value = [];
-
   try {
-    const { data } = await axios.get(`/api/subscriptions/${s.id}/history`);
-    historyEvents.value = data;
+    const { data } = await axios.get(
+      `/api/subscriptions/${subscriptionId}/payment-history`,
+      {
+        params: {
+          page: nextPage,
+          per_page: 20,
+          sort_dir: historyDirection.value,
+        },
+      },
+    );
+    if (request !== historyRequest) return;
+    historyEvents.value = data.data;
+    historyResult.value = data;
+    historyPage.value = data.current_page;
+  } catch (error) {
+    if (request === historyRequest) historyError.value = apiError(error);
   } finally {
-    historyLoading.value = false;
+    if (request === historyRequest) historyLoading.value = false;
   }
+};
+const openHistory = (subscription) => {
+  historySubscription.value = subscription;
+  historyPage.value = 1;
+  historyDirection.value = "desc";
+  historyResult.value = { total: 0, last_page: 1, total_received: 0 };
+  historyDialog.value = true;
+  loadPaymentHistory();
 };
 
 // ─────────────────────────────────────────────
@@ -513,7 +547,12 @@ onMounted(async () => {
 
     <!-- Table -->
     <div class="table-responsive text-nowrap">
-      <VProgressLinear v-if="loading" indeterminate color="primary" aria-label="Loading records" />
+      <VProgressLinear
+        v-if="loading"
+        indeterminate
+        color="primary"
+        aria-label="Loading records"
+      />
       <VTable :aria-busy="loading">
         <thead>
           <tr>
@@ -526,7 +565,13 @@ onMounted(async () => {
               />
             </th>
 
-            <th tabindex="0" @keydown.enter.prevent="setSort('subscriber_name')" @keydown.space.prevent="setSort('subscriber_name')" @click="setSort('subscriber_name')" class="sortable-header">
+            <th
+              tabindex="0"
+              @keydown.enter.prevent="setSort('subscriber_name')"
+              @keydown.space.prevent="setSort('subscriber_name')"
+              @click="setSort('subscriber_name')"
+              class="sortable-header"
+            >
               <div class="d-flex align-center">
                 Subscriber
                 <VIcon size="16" class="ms-1">{{
@@ -535,7 +580,13 @@ onMounted(async () => {
               </div>
             </th>
 
-            <th tabindex="0" @keydown.enter.prevent="setSort('plan_name')" @keydown.space.prevent="setSort('plan_name')" @click="setSort('plan_name')" class="sortable-header">
+            <th
+              tabindex="0"
+              @keydown.enter.prevent="setSort('plan_name')"
+              @keydown.space.prevent="setSort('plan_name')"
+              @click="setSort('plan_name')"
+              class="sortable-header"
+            >
               <div class="d-flex align-center">
                 Plan
                 <VIcon size="16" class="ms-1">{{
@@ -544,7 +595,13 @@ onMounted(async () => {
               </div>
             </th>
 
-            <th tabindex="0" @keydown.enter.prevent="setSort('start_date')" @keydown.space.prevent="setSort('start_date')" @click="setSort('start_date')" class="sortable-header">
+            <th
+              tabindex="0"
+              @keydown.enter.prevent="setSort('start_date')"
+              @keydown.space.prevent="setSort('start_date')"
+              @click="setSort('start_date')"
+              class="sortable-header"
+            >
               <div class="d-flex align-center">
                 Start
                 <VIcon size="16" class="ms-1">{{
@@ -553,7 +610,13 @@ onMounted(async () => {
               </div>
             </th>
 
-            <th tabindex="0" @keydown.enter.prevent="setSort('monthly_discount')" @keydown.space.prevent="setSort('monthly_discount')" @click="setSort('monthly_discount')" class="sortable-header">
+            <th
+              tabindex="0"
+              @keydown.enter.prevent="setSort('monthly_discount')"
+              @keydown.space.prevent="setSort('monthly_discount')"
+              @click="setSort('monthly_discount')"
+              class="sortable-header"
+            >
               <div class="d-flex align-center">
                 Discount
                 <VIcon size="16" class="ms-1">{{
@@ -562,7 +625,13 @@ onMounted(async () => {
               </div>
             </th>
 
-            <th tabindex="0" @keydown.enter.prevent="setSort('current_balance')" @keydown.space.prevent="setSort('current_balance')" @click="setSort('current_balance')" class="sortable-header">
+            <th
+              tabindex="0"
+              @keydown.enter.prevent="setSort('current_balance')"
+              @keydown.space.prevent="setSort('current_balance')"
+              @click="setSort('current_balance')"
+              class="sortable-header"
+            >
               <div class="d-flex align-center">
                 Balance
                 <VIcon size="16" class="ms-1">{{
@@ -571,7 +640,13 @@ onMounted(async () => {
               </div>
             </th>
 
-            <th tabindex="0" @keydown.enter.prevent="setSort('status')" @keydown.space.prevent="setSort('status')" @click="setSort('status')" class="sortable-header">
+            <th
+              tabindex="0"
+              @keydown.enter.prevent="setSort('status')"
+              @keydown.space.prevent="setSort('status')"
+              @click="setSort('status')"
+              class="sortable-header"
+            >
               <div class="d-flex align-center">
                 Status
                 <VIcon size="16" class="ms-1">{{ sortIcon("status") }}</VIcon>
@@ -639,7 +714,7 @@ onMounted(async () => {
                 variant="text"
                 class="me-1"
                 @click="openHistory(s)"
-                >History</VBtn
+                >Payment History</VBtn
               >
 
               <VMenu>
@@ -672,13 +747,21 @@ onMounted(async () => {
                     >
                   </VListItem>
 
-                  <VListItem :to="{ path: '/statements', query: { search: String(s.id) } }"><VListItemTitle>Download / email statements</VListItemTitle></VListItem>
+                  <VListItem
+                    :to="{
+                      path: '/statements',
+                      query: { search: String(s.id) },
+                    }"
+                    ><VListItemTitle
+                      >Download / email statements</VListItemTitle
+                    ></VListItem
+                  >
                   <VListItem @click="openBillingPreview(s)">
                     <VListItemTitle>Billing Preview</VListItemTitle>
                   </VListItem>
 
                   <VListItem @click="openHistory(s)">
-                    <VListItemTitle>History</VListItemTitle>
+                    <VListItemTitle>Payment History</VListItemTitle>
                   </VListItem>
 
                   <VListItem @click="remove(s)">
@@ -691,7 +774,8 @@ onMounted(async () => {
 
           <tr v-if="!loading && subscriptions.length === 0">
             <td colspan="8" class="text-center text-muted py-4">
-              No subscriptions match these filters. Adjust your search or status.
+              No subscriptions match these filters. Adjust your search or
+              status.
             </td>
           </tr>
         </tbody>
@@ -743,8 +827,12 @@ onMounted(async () => {
       </VCardTitle>
 
       <VCardText>
-        <p v-if="form.id" class="mb-4">Plan and discount changes apply from next month.</p>
-        <VAlert v-if="formError" type="error" class="mb-4">{{ formError }}</VAlert>
+        <p v-if="form.id" class="mb-4">
+          Plan and discount changes apply from next month.
+        </p>
+        <VAlert v-if="formError" type="error" class="mb-4">{{
+          formError
+        }}</VAlert>
         <VRow>
           <VCol cols="12" md="6">
             <VAutocomplete
@@ -847,8 +935,12 @@ onMounted(async () => {
 
       <VCardActions>
         <VSpacer />
-        <VBtn variant="tonal" :disabled="saving" @click="dialog = false">Cancel</VBtn>
-        <VBtn color="primary" :loading="saving" :disabled="saving" @click="save">Save</VBtn>
+        <VBtn variant="tonal" :disabled="saving" @click="dialog = false"
+          >Cancel</VBtn
+        >
+        <VBtn color="primary" :loading="saving" :disabled="saving" @click="save"
+          >Save</VBtn
+        >
       </VCardActions>
     </VCard>
   </VDialog>
@@ -916,40 +1008,114 @@ onMounted(async () => {
     </VCard>
   </VDialog>
 
-  <!-- Dialog: History Timeline -->
-  <VDialog v-model="historyDialog" max-width="700">
+  <!-- Payment records for the selected subscription -->
+  <VDialog v-model="historyDialog" max-width="1100">
     <VCard>
-      <VCardTitle>Subscription History</VCardTitle>
+      <VCardTitle>Payment History</VCardTitle>
       <VCardText>
-        <div v-if="historyLoading" class="text-center py-6">
-          <VProgressCircular indeterminate color="primary" />
+        <p>
+          {{ historySubscription?.subscriber?.name || "Subscriber" }} /
+          Subscription #{{ historySubscription?.id }}
+        </p>
+        <div
+          class="d-flex flex-wrap align-center justify-space-between gap-3 mb-4"
+        >
+          <div v-if="!historyError && !historyLoading">
+            <strong>{{ formatCurrency(historyResult.total_received) }}</strong>
+            received across all pages
+            <div class="text-caption">
+              Excludes voided payments, offsets, and adjustments.
+              {{ historyResult.total }} entries.
+            </div>
+          </div>
+          <VSelect
+            v-model="historyDirection"
+            :items="[
+              { title: 'Newest first', value: 'desc' },
+              { title: 'Oldest first', value: 'asc' },
+            ]"
+            label="Payment order"
+            hide-details
+            density="compact"
+            style="max-width: 200px"
+            :disabled="historyLoading"
+            @update:model-value="loadPaymentHistory()"
+          />
         </div>
-
-        <div v-else-if="historyEvents.length">
-          <VTimeline side="end" density="compact">
-            <VTimelineItem
-              v-for="(event, idx) in historyEvents"
-              :key="idx"
-              :dot-color="event.type === 'status' ? 'primary' : 'secondary'"
-              size="small"
-            >
-              <div class="text-caption text-medium-emphasis">
-                {{ event.date }}
-              </div>
-              <div class="fw-500">{{ event.title || event.type }}</div>
-              <div class="text-body-2">
-                {{ event.description }}
-              </div>
-            </VTimelineItem>
-          </VTimeline>
-        </div>
-
-        <div v-else class="text-center py-6">No history available.</div>
+        <VAlert v-if="historyError" type="error" variant="tonal" class="mb-4"
+          >{{ historyError }}
+          <VBtn variant="text" @click="loadPaymentHistory(historyPage)"
+            >Retry</VBtn
+          ></VAlert
+        >
+        <VProgressLinear
+          v-if="historyLoading"
+          indeterminate
+          aria-label="Loading payment history"
+        />
+        <VTable
+          v-else-if="!historyError"
+          fixed-header
+          height="420"
+          density="compact"
+        >
+          <thead>
+            <tr>
+              <th>Payment / Date</th>
+              <th class="text-end">Amount</th>
+              <th>Type</th>
+              <th>Method</th>
+              <th>Collector</th>
+              <th>Remarks</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="payment in historyEvents" :key="payment.id">
+              <td>
+                #{{ payment.id }}
+                <div>{{ payment.payment_date || "Not recorded" }}</div>
+              </td>
+              <td class="text-end text-no-wrap">
+                {{ formatCurrency(payment.amount) }}
+              </td>
+              <td>{{ payment.payment_type }}</td>
+              <td>{{ payment.payment_method || "Not recorded" }}</td>
+              <td>{{ payment.collector_name || "Not recorded" }}</td>
+              <td style="min-width: 160px; white-space: normal">
+                {{ payment.remarks || "-" }}
+              </td>
+              <td>
+                <VChip
+                  size="small"
+                  :color="payment.status === 'voided' ? 'error' : 'success'"
+                  >{{
+                    payment.status === "voided" ? "Voided" : "Recorded"
+                  }}</VChip
+                >
+              </td>
+            </tr>
+            <tr v-if="!historyEvents.length">
+              <td colspan="7" class="text-center pa-6">
+                No payments recorded for this subscription.
+              </td>
+            </tr>
+          </tbody>
+        </VTable>
+        <VPagination
+          v-if="!historyError && historyResult.last_page > 1"
+          :model-value="historyPage"
+          :length="historyResult.last_page"
+          :total-visible="5"
+          :disabled="historyLoading"
+          @update:model-value="loadPaymentHistory"
+        />
       </VCardText>
-      <VCardActions>
-        <VSpacer />
-        <VBtn variant="tonal" @click="historyDialog = false">Close</VBtn>
-      </VCardActions>
+      <VCardActions
+        ><VSpacer /><VBtn variant="tonal" @click="historyDialog = false"
+          >Close</VBtn
+        ></VCardActions
+      >
     </VCard>
   </VDialog>
 </template>

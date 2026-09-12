@@ -37,89 +37,90 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 });
 
 Route::middleware('auth:sanctum')->group(function () {
-Route::get('/operations/dashboard', [\App\Http\Controllers\Api\OperationsController::class, 'dashboard']);
-Route::get('/operations/accounts/print', [\App\Http\Controllers\Api\OperationsController::class, 'printAccounts']);
-Route::get('/operations/accounts', [\App\Http\Controllers\Api\OperationsController::class, 'accounts']);
-Route::get('/operations/reconciliation', [\App\Http\Controllers\Api\OperationsController::class, 'reconciliation']);
-Route::post('/operations/remittances', [\App\Http\Controllers\Api\OperationsController::class, 'remit']);
-Route::post('/operations/remittances/{remittance}/void', [\App\Http\Controllers\Api\OperationsController::class, 'voidRemittance']);
-Route::get('/operations/payment-audits', [\App\Http\Controllers\Api\OperationsController::class, 'audits']);
-Route::get('/subscribers/search', [SubscriberController::class, 'search']);
-Route::get('/subscribers-with-dues', [BillingController::class, 'subscribersWithDues']);
-// Route::get('/subscriptions', [SubscriptionController::class, 'index']);
-// Route::get('/subscriptions/{id}', [SubscriptionController::class, 'show']);
+    Route::get('/operations/dashboard', [\App\Http\Controllers\Api\OperationsController::class, 'dashboard']);
+    Route::get('/operations/accounts/print', [\App\Http\Controllers\Api\OperationsController::class, 'printAccounts']);
+    Route::get('/operations/accounts', [\App\Http\Controllers\Api\OperationsController::class, 'accounts']);
+    Route::get('/operations/reconciliation', [\App\Http\Controllers\Api\OperationsController::class, 'reconciliation']);
+    Route::post('/operations/remittances', [\App\Http\Controllers\Api\OperationsController::class, 'remit']);
+    Route::post('/operations/remittances/{remittance}/void', [\App\Http\Controllers\Api\OperationsController::class, 'voidRemittance']);
+    Route::get('/operations/payment-audits', [\App\Http\Controllers\Api\OperationsController::class, 'audits']);
+    Route::get('/subscribers/search', [SubscriberController::class, 'search']);
+    Route::get('/subscribers-with-dues', [BillingController::class, 'subscribersWithDues']);
+    // Route::get('/subscriptions', [SubscriptionController::class, 'index']);
+    // Route::get('/subscriptions/{id}', [SubscriptionController::class, 'show']);
 
 
-// Route::get('/plans', [PlanController::class, 'index'])->name('plans.index');
-Route::get('plans/options', [PlanController::class, 'options']);
-Route::apiResource('plans', PlanController::class);
+    // Route::get('/plans', [PlanController::class, 'index'])->name('plans.index');
+    Route::get('plans/options', [PlanController::class, 'options']);
+    Route::apiResource('plans', PlanController::class);
 
 
-Route::apiResource('subscribers', SubscriberController::class);
+    Route::apiResource('subscribers', SubscriberController::class);
 
-Route::get('subscriptions/options', [SubscriptionController::class, 'options']);
+    Route::get('subscriptions/options', [SubscriptionController::class, 'options']);
 
-Route::apiResource('subscriptions', SubscriptionController::class);
+    Route::apiResource('subscriptions', SubscriptionController::class);
 
-Route::apiResource('addons', AddonController::class);
-Route::apiResource('payments', PaymentController::class);
-Route::apiResource('serviceCredits', ServiceCreditController::class);
-
-
-
-Route::get('/dues', [BillingController::class, 'subscribersWithDues']);
-Route::get('/billing-statements', [BillingController::class, 'subscribersWithDues'])->name('billing-statements.index');
-Route::get('/subscriptions/{subscription}/billing-statement', [BillingController::class, 'soaPdf']);
-Route::post('/subscriptions/{subscription}/billing-statement/email', [BillingController::class, 'sendSoa'])->middleware('throttle:10,1');
-Route::get('/subscriptions/{subscription}/account-statement', [\App\Http\Controllers\Api\AccountStatementController::class, 'preview']);
-Route::get('/subscriptions/{subscription}/account-statement/pdf', [\App\Http\Controllers\Api\AccountStatementController::class, 'download']);
-Route::post('/subscriptions/{subscription}/account-statement/email', [\App\Http\Controllers\Api\AccountStatementController::class, 'email'])->middleware('throttle:10,1');
-
-// Route::get('/subscriptions/{subscription}/soa-json', [BillingController::class, 'soaJson']);
-// Route::get('/subscriptions/{subscription}/soa', [BillingController::class, 'soaPdf']);
-// Route::post('/subscriptions/{subscription}/send-soa', [BillingController::class, 'sendSoa'])->middleware('throttle:10,1');
-// Route::get('/subscriptions/{subscription}/soa', [SOAController::class, 'download'])->name('subscriptions.soa.download');
-// Route::post('/subscriptions/{subscription}/soa/email', [SOAController::class, 'email'])->name('subscriptions.soa.email');
-
-Route::get('/subscriptions/{subscription}/soa-json', [BillingController::class, 'soaJson']);
-Route::get('/subscriptions/{subscription}/soa',      [BillingController::class, 'soaPdf']);
-Route::post('/subscriptions/{subscription}/send-soa', [BillingController::class, 'sendSoa'])->middleware('throttle:10,1');
-
-Route::get('/subscriptions/{subscription}/history', [SubscriptionHistoryController::class, 'index']);
-Route::post('/subscriptions/{subscription}/assign-collector', [SubscriptionController::class, 'assignCollector']);
-
-// Route::post('/subscriptions/{subscription}/activate', [SubscriptionStatusController::class, 'activate']);
-// Route::post('/subscriptions/{subscription}/deactivate', [SubscriptionStatusController::class, 'deactivate']);
+    Route::apiResource('addons', AddonController::class);
+    Route::apiResource('payments', PaymentController::class);
+    Route::apiResource('serviceCredits', ServiceCreditController::class);
 
 
 
-Route::prefix('subscriptions')->group(function () {
-    Route::post('{subscription}/activate', [SubscriptionController::class, 'activate']);
-    Route::post('{subscription}/deactivate', [SubscriptionController::class, 'deactivate']);
-    Route::post('{subscription}/suspend', [SubscriptionController::class, 'deactivate']);
+    Route::get('/dues', [BillingController::class, 'subscribersWithDues']);
+    Route::get('/billing-statements', [BillingController::class, 'subscribersWithDues'])->name('billing-statements.index');
+    Route::get('/subscriptions/{subscription}/billing-statement', [BillingController::class, 'soaPdf']);
+    Route::post('/subscriptions/{subscription}/billing-statement/email', [BillingController::class, 'sendSoa'])->middleware('throttle:10,1');
+    Route::get('/subscriptions/{subscription}/account-statement', [\App\Http\Controllers\Api\AccountStatementController::class, 'preview']);
+    Route::get('/subscriptions/{subscription}/account-statement/pdf', [\App\Http\Controllers\Api\AccountStatementController::class, 'download']);
+    Route::post('/subscriptions/{subscription}/account-statement/email', [\App\Http\Controllers\Api\AccountStatementController::class, 'email'])->middleware('throttle:10,1');
 
-    // Route::get('{subscription}/history', [SubscriptionController::class, 'history']);
-    Route::get('{subscription}/history', [SubscriptionHistoryController::class, 'index']);
-});
+    // Route::get('/subscriptions/{subscription}/soa-json', [BillingController::class, 'soaJson']);
+    // Route::get('/subscriptions/{subscription}/soa', [BillingController::class, 'soaPdf']);
+    // Route::post('/subscriptions/{subscription}/send-soa', [BillingController::class, 'sendSoa'])->middleware('throttle:10,1');
+    // Route::get('/subscriptions/{subscription}/soa', [SOAController::class, 'download'])->name('subscriptions.soa.download');
+    // Route::post('/subscriptions/{subscription}/soa/email', [SOAController::class, 'email'])->name('subscriptions.soa.email');
 
-Route::get('/collection-sheet', [CollectionController::class, 'collectionSheet']);
+    Route::get('/subscriptions/{subscription}/soa-json', [BillingController::class, 'soaJson']);
+    Route::get('/subscriptions/{subscription}/soa',      [BillingController::class, 'soaPdf']);
+    Route::post('/subscriptions/{subscription}/send-soa', [BillingController::class, 'sendSoa'])->middleware('throttle:10,1');
 
+    Route::get('/subscriptions/{subscription}/history', [SubscriptionHistoryController::class, 'index']);
+    Route::get('/subscriptions/{subscription}/payment-history', [\App\Http\Controllers\Api\PaymentHistoryController::class, 'index']);
+    Route::post('/subscriptions/{subscription}/assign-collector', [SubscriptionController::class, 'assignCollector']);
 
-Route::get('/collection-assignments', [CollectionAssignmentController::class, 'index']);
-Route::post('/collection-assignments', [CollectionAssignmentController::class, 'store']);
-Route::delete('/collection-assignments/{collectionAssignment}', [CollectionAssignmentController::class, 'destroy']);
-
-Route::post('/collection-assignments/bulk-reassign', [CollectionAssignmentController::class, 'bulkReassign']);
-Route::post('/collection-assignments/bulk-delete', [CollectionAssignmentController::class, 'bulkDelete']);
-
-
-
-Route::get('/collection-route', [CollectionRouteController::class, 'index']);
-Route::get('/collection-route/pdf', [CollectionRouteController::class, 'exportPdf']);
-Route::get('/collection-sheet/print', [CollectionController::class, 'printCollectionSheet']);
+    // Route::post('/subscriptions/{subscription}/activate', [SubscriptionStatusController::class, 'activate']);
+    // Route::post('/subscriptions/{subscription}/deactivate', [SubscriptionStatusController::class, 'deactivate']);
 
 
 
-Route::post('/collection-sheet/assign-collector', [CollectionAssignmentController::class, 'assignFromCollectionSheet']);
-Route::delete('/collection-sheet/{assignment}', [CollectionController::class, 'removeAssignment']);
+    Route::prefix('subscriptions')->group(function () {
+        Route::post('{subscription}/activate', [SubscriptionController::class, 'activate']);
+        Route::post('{subscription}/deactivate', [SubscriptionController::class, 'deactivate']);
+        Route::post('{subscription}/suspend', [SubscriptionController::class, 'deactivate']);
+
+        // Route::get('{subscription}/history', [SubscriptionController::class, 'history']);
+        Route::get('{subscription}/history', [SubscriptionHistoryController::class, 'index']);
+    });
+
+    Route::get('/collection-sheet', [CollectionController::class, 'collectionSheet']);
+
+
+    Route::get('/collection-assignments', [CollectionAssignmentController::class, 'index']);
+    Route::post('/collection-assignments', [CollectionAssignmentController::class, 'store']);
+    Route::delete('/collection-assignments/{collectionAssignment}', [CollectionAssignmentController::class, 'destroy']);
+
+    Route::post('/collection-assignments/bulk-reassign', [CollectionAssignmentController::class, 'bulkReassign']);
+    Route::post('/collection-assignments/bulk-delete', [CollectionAssignmentController::class, 'bulkDelete']);
+
+
+
+    Route::get('/collection-route', [CollectionRouteController::class, 'index']);
+    Route::get('/collection-route/pdf', [CollectionRouteController::class, 'exportPdf']);
+    Route::get('/collection-sheet/print', [CollectionController::class, 'printCollectionSheet']);
+
+
+
+    Route::post('/collection-sheet/assign-collector', [CollectionAssignmentController::class, 'assignFromCollectionSheet']);
+    Route::delete('/collection-sheet/{assignment}', [CollectionController::class, 'removeAssignment']);
 });
