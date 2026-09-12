@@ -1,84 +1,81 @@
 <script setup>
-import { ref, onMounted, watch, computed } from "vue"
-import debounce from "lodash/debounce"
-import api from "@/plugins/axios"
-import { formatIsoToReadable } from "@/helpers/dateUtils"
+import { ref, onMounted, watch, computed } from "vue";
+import debounce from "lodash/debounce";
+import api from "@/plugins/axios";
+import { formatIsoToReadable } from "@/helpers/dateUtils";
 import {
   assignCollectorFromCollectionSheet,
   removeCollectorAssignment,
-} from "@/services/collectionAssignments"
+} from "@/services/collectionAssignments";
 
-const loading = ref(false)
-const assigning = ref(false)
-const printing = ref(false)
-const rows = ref([])
+const loading = ref(false);
+const assigning = ref(false);
+const printing = ref(false);
+const rows = ref([]);
 
-const page = ref(1)
-const perPage = ref(10)
-const totalItems = ref(0)
-const sortBy = ref('assignment_date')
-const sortDir = ref('asc')
+const page = ref(1);
+const perPage = ref(10);
+const totalItems = ref(0);
+const sortBy = ref("assignment_date");
+const sortDir = ref("asc");
 
-const search = ref("")
-const typeFilter = ref("due")
-const assignmentDate = ref(new Date().toISOString().slice(0, 10))
-const collectorName = ref("")
-const assignmentStatusFilter = ref(null)
+const search = ref("");
+const typeFilter = ref("due");
+const assignmentDate = ref(new Date().toISOString().slice(0, 10));
+const collectorName = ref("");
+const assignmentStatusFilter = ref(null);
 
 const filterOptions = [
   { label: "Due", value: "due" },
   { label: "Overdue", value: "overdue" },
   { label: "Disconnected Clients", value: "disconnected" },
-]
+];
 
 const assignmentStatusOptions = [
   { label: "All", value: null },
   { label: "Assigned", value: "assigned" },
   { label: "Unassigned", value: "unassigned" },
-]
+];
 
-const selectedIds = ref([])
-const assignDialog = ref(false)
+const selectedIds = ref([]);
+const assignDialog = ref(false);
 
 const assignForm = ref({
   collector_name: "",
   assignment_date: new Date().toISOString().slice(0, 10),
   notes: "",
-})
+});
 
-const collectorOptions = [
-  "Collector A",
-  "Collector B",
-  "Collector C",
-]
+const collectorOptions = ["Collector A", "Collector B", "Collector C"];
 
-const money = v => Number(v ?? 0).toFixed(2)
+const money = (v) => Number(v ?? 0).toFixed(2);
 
-const allSelected = computed(() =>
-  rows.value.length > 0 &&
-  rows.value.every(r => selectedIds.value.includes(r.subscription_id))
-)
+const allSelected = computed(
+  () =>
+    rows.value.length > 0 &&
+    rows.value.every((r) => selectedIds.value.includes(r.subscription_id)),
+);
 
 const toggleSelectAll = () => {
   if (allSelected.value) {
-    selectedIds.value = []
+    selectedIds.value = [];
   } else {
-    selectedIds.value = rows.value.map(r => r.subscription_id)
+    selectedIds.value = rows.value.map((r) => r.subscription_id);
   }
-}
+};
 
 const toggleRowSelection = (checked, subscriptionId) => {
   if (checked) {
     if (!selectedIds.value.includes(subscriptionId)) {
-      selectedIds.value.push(subscriptionId)
+      selectedIds.value.push(subscriptionId);
     }
   } else {
-    selectedIds.value = selectedIds.value.filter(id => id !== subscriptionId)
+    selectedIds.value = selectedIds.value.filter((id) => id !== subscriptionId);
   }
-}
+};
 
 const load = async () => {
-  loading.value = true
+  loading.value = true;
   try {
     const { data } = await api.get("/api/collection-sheet", {
       params: {
@@ -92,111 +89,114 @@ const load = async () => {
         sort_by: sortBy.value,
         sort_dir: sortDir.value,
       },
-    })
+    });
 
-    rows.value = data.data ?? []
-    totalItems.value = data.total ?? 0
+    rows.value = data.data ?? [];
+    totalItems.value = data.total ?? 0;
 
-    selectedIds.value = selectedIds.value.filter(id =>
-      rows.value.some(row => row.subscription_id === id)
-    )
+    selectedIds.value = selectedIds.value.filter((id) =>
+      rows.value.some((row) => row.subscription_id === id),
+    );
   } finally {
-    loading.value = false
+    loading.value = false;
   }
-}
+};
 
 const debouncedLoad = debounce(() => {
-  page.value = 1
-  load()
-}, 350)
+  page.value = 1;
+  load();
+}, 350);
 
-watch(search, debouncedLoad)
+watch(search, debouncedLoad);
 
-watch([typeFilter, assignmentDate, collectorName, assignmentStatusFilter], () => {
-  page.value = 1
-  load()
-})
+watch(
+  [typeFilter, assignmentDate, collectorName, assignmentStatusFilter],
+  () => {
+    page.value = 1;
+    load();
+  },
+);
 
 const openAssignDialog = () => {
   if (!selectedIds.value.length) {
-    alert("Select subscriptions first")
-    return
+    alert("Select subscriptions first");
+    return;
   }
 
   assignForm.value = {
     collector_name: "",
     assignment_date: assignmentDate.value,
     notes: "",
-  }
+  };
 
-  assignDialog.value = true
-}
+  assignDialog.value = true;
+};
 
 const assignCollector = async () => {
   if (!selectedIds.value.length) {
-    alert("Select subscriptions first")
-    return
+    alert("Select subscriptions first");
+    return;
   }
 
   if (!assignForm.value.collector_name) {
-    alert("Please select a collector")
-    return
+    alert("Please select a collector");
+    return;
   }
 
-  assigning.value = true
+  assigning.value = true;
   try {
     await assignCollectorFromCollectionSheet({
       subscription_ids: selectedIds.value,
       collector_name: assignForm.value.collector_name,
       assignment_date: assignForm.value.assignment_date,
       notes: assignForm.value.notes,
-    })
+    });
 
-    assignDialog.value = false
-    selectedIds.value = []
-    await load()
-    alert("Collector assigned successfully")
+    assignDialog.value = false;
+    selectedIds.value = [];
+    await load();
+    alert("Collector assigned successfully");
   } catch (e) {
-    alert(e.response?.data?.message || "Failed to assign collector")
+    alert(e.response?.data?.message || "Failed to assign collector");
   } finally {
-    assigning.value = false
+    assigning.value = false;
   }
-}
+};
 
-const removeAssignment = async row => {
+const removeAssignment = async (row) => {
   if (!row.assignment_id) {
-    alert("This subscription is not assigned to any collector.")
-    return
+    alert("This subscription is not assigned to any collector.");
+    return;
   }
 
-  if (!confirm("Remove assigned collector?")) return
+  if (!confirm("Remove assigned collector?")) return;
 
   try {
-    await removeCollectorAssignment(row.assignment_id)
-    await load()
+    await removeCollectorAssignment(row.assignment_id);
+    await load();
   } catch (e) {
-    alert(e.response?.data?.message || "Failed to remove assignment")
+    alert(e.response?.data?.message || "Failed to remove assignment");
   }
-}
+};
 
 const setSort = (column) => {
   if (sortBy.value === column) {
-    sortDir.value = sortDir.value === 'asc' ? 'desc' : 'asc'
+    sortDir.value = sortDir.value === "asc" ? "desc" : "asc";
   } else {
-    sortBy.value = column
-    sortDir.value = 'asc'
+    sortBy.value = column;
+    sortDir.value = "asc";
   }
-  page.value = 1
-  load()
-}
+  page.value = 1;
+  load();
+};
 
 const sortIcon = (column) => {
-  if (sortBy.value !== column) return 'mdi-swap-vertical'
-  return sortDir.value === 'asc' ? 'mdi-arrow-up' : 'mdi-arrow-down'
-}
+  if (sortBy.value !== column) return "mdi-swap-vertical";
+  return sortDir.value === "asc" ? "mdi-arrow-up" : "mdi-arrow-down";
+};
 
 const printCollectionSheet = async () => {
-  printing.value = true
+  printing.value = true;
   try {
     const response = await api.get("/api/collection-sheet/print", {
       params: {
@@ -204,32 +204,35 @@ const printCollectionSheet = async () => {
         collector_name: collectorName.value || undefined,
         type: typeFilter.value || undefined,
         assignment_status: assignmentStatusFilter.value ?? undefined,
+        search: search.value || undefined,
       },
       responseType: "blob",
-    })
+    });
 
-    const blob = new Blob([response.data], { type: "application/pdf" })
-    const url = window.URL.createObjectURL(blob)
+    const blob = new Blob([response.data], { type: "application/pdf" });
+    const url = window.URL.createObjectURL(blob);
 
-    const a = document.createElement("a")
-    a.href = url
-    a.download = `collection-sheet-${assignmentDate.value}.pdf`
-    a.click()
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `collection-sheet-${assignmentDate.value}.pdf`;
+    a.click();
 
-    window.URL.revokeObjectURL(url)
+    window.URL.revokeObjectURL(url);
   } catch (e) {
-    alert("Failed to print collection sheet")
+    alert("Failed to print collection sheet");
   } finally {
-    printing.value = false
+    printing.value = false;
   }
-}
+};
 
-onMounted(load)
+onMounted(load);
 </script>
 
 <template>
   <div class="card">
-    <VCardTitle class="d-flex flex-column flex-md-row align-center justify-space-between gap-3">
+    <VCardTitle
+      class="d-flex flex-column flex-md-row align-center justify-space-between gap-3"
+    >
       <span>Collection Sheet</span>
 
       <div class="d-flex flex-wrap gap-3 align-center">
@@ -254,14 +257,16 @@ onMounted(load)
           style="min-width: 190px"
         />
 
-        <VTextField
+        <VCombobox
           v-model="collectorName"
+          :items="collectorOptions"
           label="Collector"
           variant="outlined"
           density="comfortable"
           clearable
           hide-details
-          style="min-width: 200px"
+          auto-select-first
+          style="min-width: 220px"
         />
 
         <VSelect
@@ -301,16 +306,17 @@ onMounted(load)
           Assign Collector
         </VBtn>
 
-        <VBtn
-          color="success"
-          :loading="printing"
-          @click="printCollectionSheet"
-        >
+        <VBtn color="success" :loading="printing" @click="printCollectionSheet">
           Print
         </VBtn>
       </div>
 
-      <VProgressLinear v-if="loading" indeterminate color="primary" aria-label="Loading records" />
+      <VProgressLinear
+        v-if="loading"
+        indeterminate
+        color="primary"
+        aria-label="Loading records"
+      />
       <VTable :aria-busy="loading">
         <thead>
           <tr>
@@ -322,15 +328,97 @@ onMounted(load)
                 density="compact"
               />
             </th>
-            <th tabindex="0" @keydown.enter.prevent="setSort('assignment_date')" @keydown.space.prevent="setSort('assignment_date')" @click="setSort('assignment_date')" class="sortable-header">Date <VIcon size="16" class="ms-1">{{ sortIcon('assignment_date') }}</VIcon></th>
-            <th tabindex="0" @keydown.enter.prevent="setSort('collector_name')" @keydown.space.prevent="setSort('collector_name')" @click="setSort('collector_name')" class="sortable-header">Collector <VIcon size="16" class="ms-1">{{ sortIcon('collector_name') }}</VIcon></th>
+            <th
+              tabindex="0"
+              @keydown.enter.prevent="setSort('assignment_date')"
+              @keydown.space.prevent="setSort('assignment_date')"
+              @click="setSort('assignment_date')"
+              class="sortable-header"
+            >
+              Date
+              <VIcon size="16" class="ms-1">{{
+                sortIcon("assignment_date")
+              }}</VIcon>
+            </th>
+            <th
+              tabindex="0"
+              @keydown.enter.prevent="setSort('collector_name')"
+              @keydown.space.prevent="setSort('collector_name')"
+              @click="setSort('collector_name')"
+              class="sortable-header"
+            >
+              Collector
+              <VIcon size="16" class="ms-1">{{
+                sortIcon("collector_name")
+              }}</VIcon>
+            </th>
             <th>Assignment</th>
-            <th tabindex="0" @keydown.enter.prevent="setSort('subscriber_name')" @keydown.space.prevent="setSort('subscriber_name')" @click="setSort('subscriber_name')" class="sortable-header">Subscriber <VIcon size="16" class="ms-1">{{ sortIcon('subscriber_name') }}</VIcon></th>
-            <th tabindex="0" @keydown.enter.prevent="setSort('plan_name')" @keydown.space.prevent="setSort('plan_name')" @click="setSort('plan_name')" class="sortable-header">Plan <VIcon size="16" class="ms-1">{{ sortIcon('plan_name') }}</VIcon></th>
-            <th tabindex="0" @keydown.enter.prevent="setSort('due_date')" @keydown.space.prevent="setSort('due_date')" @click="setSort('due_date')" class="sortable-header">Due Date <VIcon size="16" class="ms-1">{{ sortIcon('due_date') }}</VIcon></th>
-            <th tabindex="0" @keydown.enter.prevent="setSort('days_overdue')" @keydown.space.prevent="setSort('days_overdue')" @click="setSort('days_overdue')" class="sortable-header">Days Overdue <VIcon size="16" class="ms-1">{{ sortIcon('days_overdue') }}</VIcon></th>
-            <th tabindex="0" @keydown.enter.prevent="setSort('collection_type')" @keydown.space.prevent="setSort('collection_type')" @click="setSort('collection_type')" class="sortable-header">Status <VIcon size="16" class="ms-1">{{ sortIcon('collection_type') }}</VIcon></th>
-            <th tabindex="0" @keydown.enter.prevent="setSort('total_due')" @keydown.space.prevent="setSort('total_due')" @click="setSort('total_due')" class="sortable-header">Amount Due <VIcon size="16" class="ms-1">{{ sortIcon('total_due') }}</VIcon></th>
+            <th
+              tabindex="0"
+              @keydown.enter.prevent="setSort('subscriber_name')"
+              @keydown.space.prevent="setSort('subscriber_name')"
+              @click="setSort('subscriber_name')"
+              class="sortable-header"
+            >
+              Subscriber
+              <VIcon size="16" class="ms-1">{{
+                sortIcon("subscriber_name")
+              }}</VIcon>
+            </th>
+            <th
+              tabindex="0"
+              @keydown.enter.prevent="setSort('plan_name')"
+              @keydown.space.prevent="setSort('plan_name')"
+              @click="setSort('plan_name')"
+              class="sortable-header"
+            >
+              Plan
+              <VIcon size="16" class="ms-1">{{ sortIcon("plan_name") }}</VIcon>
+            </th>
+            <th
+              tabindex="0"
+              @keydown.enter.prevent="setSort('due_date')"
+              @keydown.space.prevent="setSort('due_date')"
+              @click="setSort('due_date')"
+              class="sortable-header"
+            >
+              Due Date
+              <VIcon size="16" class="ms-1">{{ sortIcon("due_date") }}</VIcon>
+            </th>
+            <th
+              tabindex="0"
+              @keydown.enter.prevent="setSort('days_overdue')"
+              @keydown.space.prevent="setSort('days_overdue')"
+              @click="setSort('days_overdue')"
+              class="sortable-header"
+            >
+              Days Overdue
+              <VIcon size="16" class="ms-1">{{
+                sortIcon("days_overdue")
+              }}</VIcon>
+            </th>
+            <th
+              tabindex="0"
+              @keydown.enter.prevent="setSort('collection_type')"
+              @keydown.space.prevent="setSort('collection_type')"
+              @click="setSort('collection_type')"
+              class="sortable-header"
+            >
+              Status
+              <VIcon size="16" class="ms-1">{{
+                sortIcon("collection_type")
+              }}</VIcon>
+            </th>
+            <th
+              tabindex="0"
+              @keydown.enter.prevent="setSort('total_due')"
+              @keydown.space.prevent="setSort('total_due')"
+              @click="setSort('total_due')"
+              class="sortable-header"
+            >
+              Amount Due
+              <VIcon size="16" class="ms-1">{{ sortIcon("total_due") }}</VIcon>
+            </th>
             <th>Phone</th>
             <th>Address</th>
             <th class="text-end">Actions</th>
@@ -338,27 +426,42 @@ onMounted(load)
         </thead>
 
         <tbody>
-          <tr v-for="row in rows" :key="`${row.assignment_id ?? 'na'}-${row.subscription_id}`">
+          <tr
+            v-for="row in rows"
+            :key="`${row.assignment_id ?? 'na'}-${row.subscription_id}`"
+          >
             <td>
               <VCheckbox
                 :model-value="selectedIds.includes(row.subscription_id)"
-                @update:model-value="checked => toggleRowSelection(checked, row.subscription_id)"
+                @update:model-value="
+                  (checked) => toggleRowSelection(checked, row.subscription_id)
+                "
                 hide-details
                 density="compact"
               />
             </td>
 
-            <td>{{ row.assignment_date ? formatIsoToReadable(row.assignment_date) : "—" }}</td>
+            <td>
+              {{
+                row.assignment_date
+                  ? formatIsoToReadable(row.assignment_date)
+                  : "—"
+              }}
+            </td>
 
             <td>
               <div class="fw-500">{{ row.collector_name || "—" }}</div>
-              <div class="text-caption text-medium-emphasis">{{ row.notes || "—" }}</div>
+              <div class="text-caption text-medium-emphasis">
+                {{ row.notes || "—" }}
+              </div>
             </td>
 
             <td>
               <VChip
                 size="small"
-                :color="row.assignment_status === 'assigned' ? 'success' : 'secondary'"
+                :color="
+                  row.assignment_status === 'assigned' ? 'success' : 'secondary'
+                "
               >
                 {{ row.assignment_status }}
               </VChip>
@@ -366,17 +469,24 @@ onMounted(load)
 
             <td>
               <div class="fw-500">{{ row.subscriber_name }}</div>
-              <div class="text-caption text-medium-emphasis">{{ row.subscriber_email }}</div>
+              <div class="text-caption text-medium-emphasis">
+                {{ row.subscriber_email }}
+              </div>
             </td>
 
             <td>
               <div>{{ row.plan_name }}</div>
-              <div class="text-caption text-medium-emphasis" v-if="row.plan_speed">
+              <div
+                class="text-caption text-medium-emphasis"
+                v-if="row.plan_speed"
+              >
                 {{ row.plan_speed }} Mbps
               </div>
             </td>
 
-            <td>{{ row.due_date ? formatIsoToReadable(row.due_date) : "—" }}</td>
+            <td>
+              {{ row.due_date ? formatIsoToReadable(row.due_date) : "—" }}
+            </td>
             <td>{{ row.days_overdue || 0 }}</td>
 
             <td>
@@ -386,8 +496,8 @@ onMounted(load)
                   row.collection_type === 'overdue'
                     ? 'error'
                     : row.collection_type === 'disconnected'
-                    ? 'secondary'
-                    : 'warning'
+                      ? 'secondary'
+                      : 'warning'
                 "
               >
                 {{ row.collection_type }}
@@ -422,7 +532,9 @@ onMounted(load)
         </tbody>
       </VTable>
 
-      <div class="d-flex flex-column flex-sm-row align-center justify-space-between px-4 py-3 gap-3">
+      <div
+        class="d-flex flex-column flex-sm-row align-center justify-space-between px-4 py-3 gap-3"
+      >
         <VPagination
           v-model="page"
           :length="Math.ceil(totalItems / perPage)"
@@ -445,7 +557,12 @@ onMounted(load)
             hide-details
             class="sneat-rows-select"
             style="max-width: 110px"
-            @update:modelValue="() => { page = 1; load() }"
+            @update:modelValue="
+              () => {
+                page = 1;
+                load();
+              }
+            "
           />
         </div>
       </div>
@@ -460,7 +577,8 @@ onMounted(load)
         <VRow>
           <VCol cols="12">
             <VAlert type="info" variant="tonal">
-              Assign <strong>{{ selectedIds.length }}</strong> selected subscription(s).
+              Assign <strong>{{ selectedIds.length }}</strong> selected
+              subscription(s).
             </VAlert>
           </VCol>
 
@@ -495,9 +613,7 @@ onMounted(load)
       <VCardActions>
         <VSpacer />
 
-        <VBtn variant="tonal" @click="assignDialog = false">
-          Cancel
-        </VBtn>
+        <VBtn variant="tonal" @click="assignDialog = false"> Cancel </VBtn>
 
         <VBtn color="primary" :loading="assigning" @click="assignCollector">
           Assign
