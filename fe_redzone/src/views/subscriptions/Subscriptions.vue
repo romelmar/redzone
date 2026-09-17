@@ -1,4 +1,5 @@
 <script setup>
+import TransferReward from "@/components/TransferReward.vue";
 import { ref, onMounted, watch, computed } from "vue";
 import axios from "@/plugins/axios";
 import { apiError } from "@/helpers/operations";
@@ -717,6 +718,7 @@ onMounted(async () => {
                 >Payment History</VBtn
               >
 
+              <TransferReward :subscription-id="s.id" @applied="load" />
               <VMenu>
                 <template #activator="{ props }">
                   <VBtn size="small" variant="outlined" v-bind="props"
