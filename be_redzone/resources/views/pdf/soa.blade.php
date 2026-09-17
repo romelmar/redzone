@@ -265,7 +265,7 @@
                         <td style="text-align:right;">P{{ number_format($soa['addons_amount'], 2) }} </td>
                     </tr>
                     <tr>
-                        <td>Amount Refunded ({{ $soa['credits_days'] }} day/s outage)</td>
+                        <td>Service credits / rewards</td>
                         <td style="text-align:right;">-P{{ number_format($soa['credits_amount'], 2) }} </td>
                     </tr>
                     <tr>

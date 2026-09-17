@@ -76,6 +76,9 @@ class ServiceCreditController extends Controller
 
     public function update(Request $request, ServiceCredit $serviceCredit)
     {
+        if ($serviceCredit->transfer_reward_key) {
+            throw \Illuminate\Validation\ValidationException::withMessages(['reward' => 'Transfer rewards are retained billing records and cannot be edited or deleted here.']);
+        }
         $data = $request->validate([
             'credit_month'  => 'sometimes|date',
             'outage_days' => 'sometimes|integer|min:0',
@@ -97,6 +100,9 @@ class ServiceCreditController extends Controller
 
     public function destroy(ServiceCredit $serviceCredit)
     {
+        if ($serviceCredit->transfer_reward_key) {
+            throw \Illuminate\Validation\ValidationException::withMessages(['reward' => 'Transfer rewards are retained billing records and cannot be edited or deleted here.']);
+        }
         $serviceCredit->delete();
         return response()->noContent();
     }

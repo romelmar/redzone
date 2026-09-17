@@ -87,6 +87,8 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::get('/subscriptions/{subscription}/history', [SubscriptionHistoryController::class, 'index']);
     Route::get('/subscriptions/{subscription}/payment-history', [\App\Http\Controllers\Api\PaymentHistoryController::class, 'index']);
+Route::get('/subscriptions/{subscription}/transfer-reward', [\App\Http\Controllers\Api\TransferRewardController::class, 'preview']);
+Route::post('/subscriptions/{subscription}/transfer-reward', [\App\Http\Controllers\Api\TransferRewardController::class, 'store']);
     Route::post('/subscriptions/{subscription}/assign-collector', [SubscriptionController::class, 'assignCollector']);
 
     // Route::post('/subscriptions/{subscription}/activate', [SubscriptionStatusController::class, 'activate']);
