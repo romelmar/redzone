@@ -7,6 +7,7 @@ import SubscriptionsIndex from '@/pages/Subscriptions/Index.vue';
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
+    { path: '/pay', component: () => import('@/pages/pay.vue') },
     { path: '/subscribers-with-dues', redirect: to => ({ path: '/statements', query: to.query }) },
     { path: '/', redirect: '/dashboard', meta: { requiresAuth: true } },
     {
@@ -105,6 +106,7 @@ const router = createRouter({
       path: '/',
       component: () => import('../layouts/default.vue'),
       children: [
+        { path: 'online-payments', component: () => import('@/pages/operations/OnlinePayments.vue'), meta: { requiresAuth: true } },
         { path: 'reconciliation', component: () => import('@/pages/operations/Reconciliation.vue'), meta: { requiresAuth: true } },
         { path: 'account-reports', component: () => import('@/pages/operations/AccountReports.vue'), meta: { requiresAuth: true } },
         { path: 'payment-audit', component: () => import('@/pages/operations/PaymentAudit.vue'), meta: { requiresAuth: true } },

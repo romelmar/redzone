@@ -37,6 +37,13 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 });
 
 Route::middleware('auth:sanctum')->group(function () {
+    Route::post('/subscriptions/{subscription}/payment-link', [\App\Http\Controllers\Api\OnlinePaymentController::class, 'create'])->middleware('throttle:20,1');
+    Route::get('/online-payments', [\App\Http\Controllers\Api\OnlinePaymentController::class, 'index']);
+    Route::get('/online-payments/{onlinePayment}/link', [\App\Http\Controllers\Api\OnlinePaymentController::class, 'link']);
+    Route::post('/online-payments/{onlinePayment}/sync', [\App\Http\Controllers\Api\OnlinePaymentController::class, 'sync'])->middleware('throttle:10,1');
+    Route::post('/online-payments/{onlinePayment}/expire', [\App\Http\Controllers\Api\OnlinePaymentController::class, 'expire'])->middleware('throttle:10,1');
+    Route::post('/online-payments/{onlinePayment}/recover', [\App\Http\Controllers\Api\OnlinePaymentController::class, 'recover'])->middleware('throttle:10,1');
+    Route::post('/online-payments/{onlinePayment}/settlement', [\App\Http\Controllers\Api\OnlinePaymentController::class, 'settlement'])->middleware('throttle:10,1');
     Route::get('/operations/dashboard', [\App\Http\Controllers\Api\OperationsController::class, 'dashboard']);
     Route::get('/operations/accounts/print', [\App\Http\Controllers\Api\OperationsController::class, 'printAccounts']);
     Route::get('/operations/accounts', [\App\Http\Controllers\Api\OperationsController::class, 'accounts']);
@@ -126,3 +133,11 @@ Route::post('/subscriptions/{subscription}/transfer-reward', [\App\Http\Controll
     Route::post('/collection-sheet/assign-collector', [CollectionAssignmentController::class, 'assignFromCollectionSheet']);
     Route::delete('/collection-sheet/{assignment}', [CollectionController::class, 'removeAssignment']);
 });
+
+// Bearer payment tokens authenticate public actions; signed callbacks authenticate webhooks.
+Route::prefix('public/payments')->middleware('throttle:60,1')->group(function () {
+    Route::get('{token}', [\App\Http\Controllers\Api\OnlinePaymentController::class, 'status']);
+    Route::post('{token}/checkout', [\App\Http\Controllers\Api\OnlinePaymentController::class, 'checkout'])->middleware('throttle:10,1');
+    Route::post('{token}/sync', [\App\Http\Controllers\Api\OnlinePaymentController::class, 'syncPublic'])->middleware('throttle:6,1');
+});
+Route::post('webhooks/paymongo', [\App\Http\Controllers\Api\OnlinePaymentController::class, 'webhook'])->middleware('throttle:120,1');

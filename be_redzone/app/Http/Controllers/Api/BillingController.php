@@ -157,6 +157,7 @@ class BillingController extends Controller
             'credits_days' => (int) ($calc['credit_days'] ?? 0),
         ];
 
+        $onlinePayment = $this->onlinePayment($subscription);
         $pdf = Pdf::loadView('pdf.soa', [
             'subscription' => $subscription,
             'soa' => $soa,
@@ -165,6 +166,7 @@ class BillingController extends Controller
             'period_end' => $billingPeriod['end'],
             'bill_no' => $this->generateBillNo($subscription, $billMonth),
             'printed_at' => now(),
+            'online_payment' => $onlinePayment,
         ])->setPaper('a4');
 
         return $pdf->download(
@@ -208,6 +210,7 @@ class BillingController extends Controller
             'credits_days' => (int) ($calc['credit_days'] ?? 0),
         ];
 
+        $onlinePayment = $this->onlinePayment($subscription);
         $pdf = Pdf::loadView('pdf.soa', [
             'subscription' => $subscription,
             'soa' => $soa,
@@ -216,9 +219,10 @@ class BillingController extends Controller
             'period_end' => $billingPeriod['end'],
             'bill_no' => $subscription->billingMonthCount($billMonth),
             'printed_at' => now(),
+            'online_payment' => $onlinePayment,
         ])->output();
 
-        Mail::send('emails.billing-statement', ['soa' => $soa], function ($message) use ($subscription, $pdf, $billMonth) {
+        Mail::send('emails.billing-statement', ['soa' => $soa, 'online_payment' => $onlinePayment], function ($message) use ($subscription, $pdf, $billMonth) {
             $message
                 ->to($subscription->subscriber->email)
                 ->subject('Billing statement - ' . $billMonth->format('F Y'))
@@ -230,6 +234,14 @@ class BillingController extends Controller
         });
 
         return response()->json(['message' => 'Billing statement emailed successfully']);
+    }
+
+    private function onlinePayment(Subscription $subscription): ?array
+    {
+        $payments = app(\App\Services\PayMongo\OnlinePayments::class);
+        if (!$payments->gateway->configured() || $payments->quote($subscription)['amount_centavos'] <= 0) return null;
+        $link = $payments->create($subscription, auth()->id());
+        return ['url' => $payments->url($link), 'qr' => $payments->qr($link), 'mode' => $link->mode];
     }
 
     private function generateBillNo(Subscription $subscription, Carbon $billMonth): string

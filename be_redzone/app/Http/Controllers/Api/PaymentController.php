@@ -99,9 +99,12 @@ class PaymentController extends Controller
         $data['collector_name'] = $data['collector_name'] ?? null;
         $data['payment_method'] = $data['payment_method'] ?? 'unspecified';
         $hash = hash('sha256', json_encode($data));
-        $payment = \Illuminate\Support\Facades\DB::transaction(fn () => $key
-            ? Payment::withTrashed()->createOrFirst(['request_key' => $key], $data + ['request_hash' => $hash])
-            : Payment::create($data));
+        $payment = \Illuminate\Support\Facades\DB::transaction(function () use ($key, $data, $hash) {
+            \App\Models\Subscription::whereKey($data['subscription_id'])->lockForUpdate()->firstOrFail();
+            return $key
+                ? Payment::withTrashed()->createOrFirst(['request_key' => $key], $data + ['request_hash' => $hash])
+                : Payment::create($data);
+        });
         abort_if($payment->trashed(), 409, 'This payment was voided. Open a new payment form to record another payment.');
         abort_if($key && $payment->request_hash !== $hash, 409, 'This payment request was already used with different details. Reopen the form to record another payment.');
 

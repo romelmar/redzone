@@ -158,7 +158,7 @@ class OperationsController extends Controller
     {
         $date = $this->date($request);
         $rows = [];
-        $payments = Payment::whereDate('payment_date', $date)->where('payment_type', 'payment')
+        $payments = Payment::whereDate('payment_date', $date)->where('payment_type', 'payment')->whereNull('gateway_request_id')
             ->select('collector_name', 'payment_method')->selectRaw('SUM(amount) AS total, COUNT(*) AS payment_count')
             ->groupBy('collector_name', 'payment_method')->get();
         $remittances = CollectorRemittance::where('collection_date', $date)->orderByDesc('id')->get();

@@ -15,7 +15,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->statefulApi();
         $middleware->prepend(EnsureCorsCredentials::class);
-        $middleware->validateCsrfTokens(except: ['login', 'logout', 'register', 'sanctum/csrf-cookie']);
+        $middleware->validateCsrfTokens(except: ['login', 'logout', 'register', 'sanctum/csrf-cookie', 'api/public/payments/*', 'api/webhooks/paymongo']);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

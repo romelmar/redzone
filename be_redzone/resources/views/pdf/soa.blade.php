@@ -339,6 +339,14 @@
             page.
         </div>
 
+        @if(!empty($online_payment))
+        <div style="margin-top:12px;font-size:10px;word-break:break-all;">
+            <strong>Pay your current account balance online{{ $online_payment['mode'] === 'test' ? ' (TEST MODE)' : '' }}</strong><br>
+            <img src="{{ $online_payment['qr'] }}" width="100" height="100" alt="Payment QR code"><br>
+            <a href="{{ $online_payment['url'] }}" style="font-size:8px;">{{ $online_payment['url'] }}</a><br>
+            Private link. The payment page shows the current balance, which may differ from this statement.
+        </div>
+        @endif
         {{-- Terms --}}
         <div class="terms">
             <p><strong>Terms and Conditions</strong></p>

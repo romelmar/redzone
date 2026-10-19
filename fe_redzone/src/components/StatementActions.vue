@@ -1,6 +1,7 @@
 <script setup>
 import { computed, ref } from 'vue'
 import api from '@/plugins/axios'
+import PaymentLink from '@/components/PaymentLink.vue'
 import { businessDate, peso, apiError } from '@/helpers/operations'
 const props = defineProps({ subscriptionId: { type: Number, required: true }, email: String, month: String })
 const dialog = ref(false)
@@ -52,6 +53,7 @@ async function perform(action) {
 </script>
 <template>
   <VBtn size="small" variant="outlined" prepend-icon="bx-file" @click="open">Statements</VBtn>
+  <PaymentLink :subscription-id="subscriptionId" />
   <VDialog v-model="dialog" max-width="1000" :persistent="busy"><VCard><VCardTitle>Statements / Subscription #{{ subscriptionId }}</VCardTitle><VCardText>
     <VAlert v-if="error" type="error" variant="tonal" class="mb-4">{{ error }}</VAlert><VAlert v-if="success" type="success" variant="tonal" class="mb-4">{{ success }}</VAlert>
     <VSelect v-model="type" :disabled="busy" label="Document type" :items="[{ title: 'Billing statement', value: 'billing' }, { title: 'Statement of account', value: 'account' }]" class="mb-4" />

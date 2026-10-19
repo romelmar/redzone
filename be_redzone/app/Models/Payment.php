@@ -18,8 +18,12 @@ class Payment extends Model
     protected static function booted(): void
     {
         static::created(fn (self $payment) => $payment->recordAudit('created'));
+        static::updating(function (self $payment) {
+            abort_if($payment->getRawOriginal('gateway_request_id'), 409, 'Verified gateway payments require a tracked refund or adjustment; ordinary edits are disabled.');
+        });
         static::updated(fn (self $payment) => $payment->recordAudit('updated'));
         static::deleting(function (self $payment) {
+            abort_if($payment->gateway_request_id, 409, 'Verified gateway payments require a tracked refund or adjustment; ordinary voids are disabled.');
             $payment->auditBeforeDelete = $payment->getRawOriginal();
         });
         static::deleted(fn (self $payment) => $payment->recordAudit('voided'));

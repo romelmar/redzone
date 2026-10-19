@@ -352,10 +352,11 @@ onMounted(() => {
             <td><small class="d-block">#{{ p.id }} / {{ p.collector_name || "Unassigned" }} / {{ p.payment_method || "unspecified" }}</small>{{ p.remarks || "—" }}</td>
 
             <td class="text-end">
-              <VBtn size="small" variant="outlined" class="me-1" @click="openEdit(p)">
+              <small v-if="p.gateway_request_id">Verified online payment</small>
+              <VBtn v-if="!p.gateway_request_id" size="small" variant="outlined" class="me-1" @click="openEdit(p)">
                 Edit
               </VBtn>
-              <VBtn size="small" color="error" variant="outlined" @click="remove(p)">
+              <VBtn v-if="!p.gateway_request_id" size="small" color="error" variant="outlined" @click="remove(p)">
                 Void
               </VBtn>
             </td>

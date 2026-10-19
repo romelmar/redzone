@@ -11,11 +11,11 @@ const route = useRoute()
 const groups = [
   { title: 'Overview', items: [['Dashboard', 'bx-grid-alt', '/dashboard', 'Monitor collections, balances, and upcoming due dates.']] },
   { title: 'Customers & services', items: [['Subscribers', 'bx-user', '/subscribers', 'Manage customer records and contact information.'], ['Subscriptions', 'bx-wifi', '/subscriptions', 'Manage connections, billing, and service status.'], ['Plans', 'bx-list-ul', '/plans', 'Maintain your service plans and monthly rates.'], ['Add-ons', 'bx-extension', '/addons', 'Manage additional services and charges.']] },
-  { title: 'Billing & collections', items: [['Payments', 'bx-wallet-alt', '/payments', 'Record payments and review collection history.'], ['Service credits', 'bx-coin', '/service-credits', 'Review billing credits and account adjustments.'], ['Billing & statements', 'bx-receipt', '/statements', 'Prepare monthly bills and detailed statements of account.'], ['Collection sheet', 'bx-file', '/collection-sheet', 'Prepare collection routes and assign collectors.'], ['Cash reconciliation', 'bx-check-shield', '/reconciliation', 'Compare recorded collections with actual remittances.']] },
+  { title: 'Billing & collections', items: [['Online payments', 'bx-credit-card', '/online-payments', 'Monitor PayMongo checkouts and bank settlements.'], ['Payments', 'bx-wallet-alt', '/payments', 'Record payments and review collection history.'], ['Service credits', 'bx-coin', '/service-credits', 'Review billing credits and account adjustments.'], ['Billing & statements', 'bx-receipt', '/statements', 'Prepare monthly bills and detailed statements of account.'], ['Collection sheet', 'bx-file', '/collection-sheet', 'Prepare collection routes and assign collectors.'], ['Cash reconciliation', 'bx-check-shield', '/reconciliation', 'Compare recorded collections with actual remittances.']] },
   { title: 'Reports & oversight', items: [['Overdue accounts', 'bx-time-five', '/account-reports?type=overdue', 'Review overdue balances.'], ['Disconnected accounts', 'bx-power-off', '/account-reports?type=disconnected', 'Review disconnected services.'], ['Payment audit', 'bx-history', '/payment-audit', 'Trace payment changes and corrections.']] },
 ]
 const current = computed(() => groups.flatMap(g => g.items).find(i => i[2] === route.fullPath) || groups.flatMap(g => g.items).find(i => i[2].split('?')[0] === route.path))
-const ownHeading = computed(() => ['/dashboard', '/account-reports', '/reconciliation', '/payment-audit'].includes(route.path))
+const ownHeading = computed(() => ['/dashboard', '/account-reports', '/reconciliation', '/payment-audit', '/online-payments'].includes(route.path))
 </script>
 <template>
   <VerticalNavLayout>
